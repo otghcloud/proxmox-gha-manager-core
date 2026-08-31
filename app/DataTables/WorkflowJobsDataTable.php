@@ -64,8 +64,8 @@ class WorkflowJobsDataTable extends DataTable
             ->setTableId('dataTable')
             ->columns($this->getColumns())
             ->minifiedAjax('', null, [
-                'environment' => 'document.getElementById("filter-environment")?.value',
-                'conclusion' => 'document.getElementById("filter-conclusion")?.value',
+                'environment' => '$("#filter-environment").val()',
+                'conclusion' => '$("#filter-conclusion").val()',
             ])
             ->orderBy(7, 'desc')
             ->responsive(true)

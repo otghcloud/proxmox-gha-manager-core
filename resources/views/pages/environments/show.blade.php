@@ -51,7 +51,7 @@
 					@endif
 				</div>
 
-				<div class="card mt-3">
+				<div class="card mb-3">
 					<div class="card-header">
 						<h3 class="card-title">Pools</h3>
 						<div class="card-actions">
@@ -94,20 +94,7 @@
 					@endif
 				</div>
 
-				<div class="card">
-					<div class="card-header"><h3 class="card-title">Webhook</h3></div>
-					<div class="card-body">
-						<p class="text-secondary">
-							Add this as an organisation webhook in GitHub, content type <code>application/json</code>,
-							subscribed to <strong>Workflow jobs</strong> only.
-						</p>
-						<div class="input-group">
-							<input class="form-control font-monospace" readonly type="text" value="{{ $environment->webhook_url }}">
-						</div>
-					</div>
-				</div>
-
-				<div class="card mt-3">
+				<div class="card mb-3">
 					<div class="card-header">
 						<h3 class="card-title">Templates</h3>
 						<div class="card-actions">
@@ -144,6 +131,19 @@
 							</table>
 						</div>
 					@endif
+				</div>
+
+				<div class="card">
+					<div class="card-header"><h3 class="card-title">Webhook</h3></div>
+					<div class="card-body">
+						<p class="text-secondary">
+							Add this as an organisation webhook in GitHub, content type <code>application/json</code>,
+							subscribed to <strong>Workflow jobs</strong> only.
+						</p>
+						<div class="input-group">
+							<input class="form-control font-monospace" readonly type="text" value="{{ $environment->webhook_url }}">
+						</div>
+					</div>
 				</div>
 			</div>
 
