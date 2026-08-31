@@ -79,8 +79,8 @@ class RunnersDataTable extends DataTable
             ->setTableId('dataTable')
             ->columns($this->getColumns())
             ->minifiedAjax('', null, [
-                'environment' => 'document.getElementById("filter-environment")?.value',
-                'state' => 'document.getElementById("filter-state")?.value',
+                'environment' => '$("#filter-environment").val()',
+                'state' => '$("#filter-state").val()',
             ])
             ->orderBy(6, 'desc')
             ->responsive(true)
