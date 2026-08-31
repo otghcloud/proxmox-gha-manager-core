@@ -29,6 +29,8 @@ FROM ubuntu:26.04
 ARG PHP=8.5
 ARG PACKER_VERSION=1.16.0
 ARG DEBIAN_FRONTEND=noninteractive
+# Branch, tag or commit of proxmox-gha-manager-templates to bundle into the image.
+ARG TEMPLATES_REF=main
 
 ENV PHP_VERSION=${PHP}
 
@@ -53,8 +55,12 @@ WORKDIR /app
 COPY --from=vendor /build /app
 COPY --from=assets /build/public/build /app/public/build
 
-RUN mkdir -p /opt/image-builder \
-    && (git clone --depth 1 https://github.com/otghcloud/proxmox-gha-manager-templates.git /opt/image-builder || true)
+# Fetch by ref rather than clone so branches, tags and commit SHAs all work.
+RUN git init -q /opt/image-builder \
+    && git -C /opt/image-builder fetch -q --depth 1 \
+        https://github.com/otghcloud/proxmox-gha-manager-templates.git "${TEMPLATES_REF}" \
+    && git -C /opt/image-builder checkout -q FETCH_HEAD \
+    && rm -rf /opt/image-builder/.git
 
 COPY docker/nginx/default.conf /etc/nginx/conf.d/default.conf
 COPY docker/php/php.ini /etc/php/${PHP}/fpm/conf.d/99-proxmox-manager.ini
