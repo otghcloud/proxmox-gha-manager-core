@@ -1,0 +1,121 @@
+name: Release core
+
+on:
+  pull_request:
+    types:
+      - closed
+    branches:
+      - main
+  workflow_dispatch:
+    inputs:
+      bump_override:
+        description: Force a specific semantic version bump.
+        required: true
+        default: auto
+        type: choice
+        options:
+          - auto
+          - patch
+          - minor
+          - major
+      templates_ref:
+        description: >-
+          Tag/ref of proxmox-gha-manager-templates to bundle into this release
+          (see the templates consumption contract in the workspace README).
+        required: true
+        default: main
+        type: string
+
+concurrency:
+  group: release-core
+  cancel-in-progress: false
+
+permissions:
+  contents: read
+  pull-requests: read
+
+jobs:
+  version:
+    name: Version and tag
+    if: github.event_name == 'workflow_dispatch' || github.event.pull_request.merged == true
+    permissions:
+      contents: write
+      pull-requests: read
+    uses: ./.github/workflows/release-common.yml
+    with:
+      tag_prefix: v
+      bump_override: ${{ inputs.bump_override || 'auto' }}
+
+  publish_docker:
+    name: Publish manager image
+    needs:
+      - version
+    if: needs.version.outputs.released == 'true'
+    runs-on: [self-hosted, ubuntu-latest]
+    permissions:
+      contents: read
+      packages: write
+    env:
+      IMAGE: ghcr.io/${{ github.repository }}
+    steps:
+      - name: Checkout core at release SHA
+        uses: actions/checkout@v7
+        with:
+          ref: ${{ needs.version.outputs.release_sha }}
+          fetch-depth: 0
+          submodules: false
+          path: proxmox-gha-manager-core
+
+      - name: Checkout templates
+        uses: actions/checkout@v7
+        with:
+          repository: otghcloud/proxmox-gha-manager-templates
+          ref: ${{ github.event.inputs.templates_ref || 'main' }}
+          submodules: recursive
+          path: proxmox-gha-manager-templates
+
+      - name: Set up Docker Buildx
+        uses: docker/setup-buildx-action@v4
+
+      - name: Log in to GHCR
+        uses: docker/login-action@v4
+        with:
+          registry: ghcr.io
+          username: ${{ github.actor }}
+          password: ${{ secrets.GITHUB_TOKEN }}
+
+      - name: Build and push the image
+        uses: docker/build-push-action@v7
+        with:
+          context: .
+          file: proxmox-gha-manager-core/docker/Dockerfile
+          push: true
+          tags: |
+            ${{ env.IMAGE }}:v${{ needs.version.outputs.version }}
+            ${{ env.IMAGE }}:latest
+
+  all-checks-passed:
+    name: Release core / All checks passed
+    runs-on: [self-hosted, ubuntu-slim]
+    permissions: {}
+    needs:
+      - version
+      - publish_docker
+    if: always() && (github.event_name == 'workflow_dispatch' || github.event.pull_request.merged == true)
+    steps:
+      - name: Check all jobs passed
+        shell: bash
+        run: |
+          set -euo pipefail
+
+          results=(
+            "${{ needs.version.result }}"
+            "${{ needs.publish_docker.result }}"
+          )
+
+          for result in "${results[@]}"; do
+            if [[ "${result}" != "success" && "${result}" != "skipped" ]]; then
+              echo "One or more required jobs did not succeed."
+              exit 1
+            fi
+          done

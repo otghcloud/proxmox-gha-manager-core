@@ -1,0 +1,8 @@
+{
+  "ignorePatterns": [
+    {
+      "pattern": "^https://github.com/otghcloud/proxmox-gha-manager"
+    }
+  ],
+  "replacementPatterns": []
+}

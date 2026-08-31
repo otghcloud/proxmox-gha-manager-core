@@ -1,0 +1,48 @@
+name: Validate PR title
+
+on:
+  pull_request:
+    types:
+      - opened
+      - edited
+      - synchronize
+      - reopened
+    branches:
+      - main
+
+permissions:
+  contents: read
+
+jobs:
+  validate:
+    name: Validate PR title
+    runs-on: [self-hosted, ubuntu-slim]
+    if: github.event.pull_request.user.login != 'dependabot[bot]'
+    steps:
+      - name: Check title format
+        env:
+          PR_TITLE: ${{ github.event.pull_request.title }}
+        shell: bash
+        run: |
+          set -euo pipefail
+
+          PATTERN='^(fix|feat|ci|docs|style|build|refactor|perf|test|chore|revert)(\([a-z0-9._/-]+\))?(!)?: [A-Z].*[^.]$'
+
+          echo "PR title: ${PR_TITLE}"
+
+          if echo "${PR_TITLE}" | grep -qP "${PATTERN}"; then
+            echo "Title is valid."
+            exit 0
+          fi
+
+          echo "::error::PR title does not conform to the required format."
+          echo ""
+          echo "Expected:  <prefix>(optional-scope): <Description starting with a capital letter>"
+          echo "Received:  ${PR_TITLE}"
+          echo ""
+          echo "Allowed prefixes (lowercase):"
+          echo "  fix, feat, ci, docs, style, build, refactor, perf, test, chore, revert"
+          echo ""
+          echo "Example:"
+          echo "  feat: Add per-node build concurrency limits"
+          exit 1

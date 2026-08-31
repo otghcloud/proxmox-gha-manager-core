@@ -1,0 +1,60 @@
+name: CI core
+
+on:
+  workflow_dispatch:
+  pull_request:
+  push:
+    branches: [main]
+
+concurrency:
+  group: ci-core-${{ github.event.pull_request.number || github.ref }}
+  cancel-in-progress: true
+
+permissions:
+  contents: read
+
+jobs:
+  lint-and-test:
+    name: lint:test
+    runs-on: [self-hosted, ubuntu-latest]
+    steps:
+      - uses: actions/checkout@v7
+        with:
+          submodules: false
+
+      - uses: shivammathur/setup-php@v2
+        with:
+          php-version: '8.5'
+          extensions: mbstring, xml, curl, zip, intl, bcmath, sqlite3, gd
+          coverage: none
+
+      - name: Install PHP dependencies
+        run: composer install --prefer-dist --no-interaction --no-progress
+
+      - uses: actions/setup-node@v6
+        with:
+          node-version: '22'
+
+      - name: Build frontend assets for feature tests
+        run: npm install --no-audit --no-fund && npm run build
+
+      - name: Pint
+        run: ./vendor/bin/pint --test
+
+      - name: Tests
+        run: php artisan test
+
+  build-assets:
+    name: build:assets
+    runs-on: [self-hosted, ubuntu-latest]
+    steps:
+      - uses: actions/checkout@v7
+        with:
+          submodules: false
+
+      - uses: actions/setup-node@v6
+        with:
+          node-version: '22'
+
+      - name: Install and build
+        run: npm install --no-audit --no-fund && npm run build

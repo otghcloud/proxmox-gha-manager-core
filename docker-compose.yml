@@ -1,0 +1,21 @@
+services:
+  proxmox-manager:
+    image: ghcr.io/otghcloud/github-actions-proxmox/proxmox-manager:latest
+    # Swap the image line for this to build from a checkout. The build context is the
+    # parent repo root so the sibling templates repo is available to the image build.
+    #build:
+    #  context: ..
+    #  dockerfile: proxmox-gha-manager-core/docker/Dockerfile
+    container_name: proxmox-manager
+    restart: unless-stopped
+    # The controller must reach the Proxmox API and each ephemeral VM's unpredictable IP.
+    network_mode: host
+    environment:
+      APP_URL: https://runners.example.com
+    volumes:
+      # Holds the SQLite database, the generated APP_KEY, build logs and Packer plugins.
+      # Back this up: without the APP_KEY, stored credentials cannot be decrypted.
+      - data:/data
+
+volumes:
+  data:
