@@ -20,14 +20,12 @@ class RecentRunnersDataTable extends DataTable
     {
         return (new EloquentDataTable($query))
             ->editColumn('runner_name', fn (Runner $runner): string => '<a href="'.route('runners.show', $runner).'">'.e($runner->runner_name).'</a>')
-            ->addColumn('environment', fn (Runner $runner): string => e($runner->environment->name))
-            ->addColumn('pool', fn (Runner $runner): string => e($runner->pool?->name ?? '—'))
+            ->addColumn('pool', fn (Runner $runner): string => e($runner->pool?->name ?? '—')
+                .'<div class="text-secondary small">'.e($runner->environment->name).'</div>')
             ->editColumn('state', fn (Runner $runner): string => '<span class="badge bg-'.$runner->state->colour().'-lt runner-state">'.$runner->state->label().'</span>')
             ->editColumn('updated_at', fn (Runner $runner): string => $runner->updated_at->diffForHumans())
-            ->addColumn('actions', fn (Runner $runner): string => DataTableHelpers::actionsDropdown([
-                ['type' => 'view', 'href' => route('runners.show', $runner)],
-            ]))
-            ->rawColumns(['runner_name', 'state', 'actions'])
+            ->filterColumn('pool', fn (QueryBuilder $query, string $keyword) => $query->where(fn (QueryBuilder $q) => $q->whereRelation('pool', 'name', 'like', "%{$keyword}%")->orWhereRelation('environment', 'name', 'like', "%{$keyword}%")))
+            ->rawColumns(['runner_name', 'pool', 'state'])
             ->setRowId('id');
     }
 
@@ -49,7 +47,7 @@ class RecentRunnersDataTable extends DataTable
             ->columns($this->getColumns())
             ->minifiedAjax(route('dashboard.recent-runners'))
             ->setTableAttribute('data-auto-refresh', '15')
-            ->orderBy(4, 'desc')
+            ->orderBy(3, 'desc')
             ->responsive(true)
             ->serverSide(true);
     }
@@ -61,11 +59,9 @@ class RecentRunnersDataTable extends DataTable
     {
         return [
             Column::make('runner_name')->title('Runner'),
-            Column::computed('environment'),
-            Column::computed('pool'),
+            Column::computed('pool')->title('Pool'),
             Column::make('state')->width(100),
             Column::make('updated_at')->title('Finished')->width(120)->searchable(false),
-            Column::computed('actions')->width(60)->addClass('text-end'),
         ];
     }
 
