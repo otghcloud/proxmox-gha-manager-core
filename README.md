@@ -13,7 +13,7 @@ docker run -d --name proxmox-gha-manager-core \
   -v proxmox-gha-manager-core-data:/data \
   -e APP_URL=https://runners.example.com \
   -e TRUSTED_PROXIES='*' \
-  ghcr.io/otghcloud/proxmox-gha-manager-core/proxmox-gha-manager-core:latest
+  ghcr.io/otghcloud/proxmox-gha-manager-core:latest
 ```
 
 Open the address in a browser and the setup wizard will guide you through the rest of the setup and configuration.
@@ -44,7 +44,7 @@ Build directly from this repository root:
 docker build -t proxmox-gha-manager-core -f docker/Dockerfile .
 ```
 
-The container automatically clones the required builder and template dependencies into `/opt/image-builder` and runs Nginx, PHP-FPM, Redis, queue workers, build workers, and the scheduler under Supervisor.
+The image bundles the published [proxmox-gha-manager-templates](https://github.com/otghcloud/proxmox-gha-manager-templates) catalog at `/opt/image-builder`, pinned by the `TEMPLATES_REF` build argument, and runs Nginx, PHP-FPM, Redis, queue workers, build workers, and the scheduler under Supervisor. Builds invoke Packer directly against those templates; no external build script is required.
 
 ## Command line
 

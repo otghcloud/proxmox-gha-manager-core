@@ -3,7 +3,7 @@
 namespace App\Enums;
 
 /**
- * Proxmox build targets accepted by image-builder's `scripts/build.sh`.
+ * Proxmox build targets, matching the `target` keys in the published templates catalog.
  *
  * QEMU targets are deliberately absent: they build locally and remain exclusive to the
  * standalone image-builder, whereas Proxmox builds run on the Proxmox host over its API.
@@ -46,6 +46,32 @@ enum BuildTarget: string
             self::UbuntuSlim => 'PKR_VAR_pmx_ubuntu_slim_iso_file',
             self::Windows2022 => 'PKR_VAR_pmx_windows2022_iso_file',
             self::Windows2025 => 'PKR_VAR_pmx_windows2025_iso_file',
+        };
+    }
+
+    /**
+     * The Packer variable overriding where this target's build scripts are read from.
+     *
+     * The Windows templates hardcode their scripts root, so they have no override.
+     */
+    public function scriptsRootVariable(): ?string
+    {
+        return match ($this) {
+            self::Ubuntu2404, self::Ubuntu2604 => 'PKR_VAR_ubuntu_scripts_root',
+            self::UbuntuSlim => 'PKR_VAR_ubuntu_slim_scripts_root',
+            self::Windows2022, self::Windows2025 => null,
+        };
+    }
+
+    /**
+     * This target's directory within an actions/runner-images checkout.
+     */
+    public function runnerImagesDirectory(): string
+    {
+        return match ($this) {
+            self::Ubuntu2404, self::Ubuntu2604 => 'images/ubuntu',
+            self::UbuntuSlim => 'images/ubuntu-slim',
+            self::Windows2022, self::Windows2025 => 'images/windows',
         };
     }
 

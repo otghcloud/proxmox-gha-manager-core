@@ -36,13 +36,18 @@ class BuildProgressTest extends TestCase
 
     protected function tearDown(): void
     {
-        foreach (glob($this->directory.'/*') ?: [] as $file) {
-            unlink($file);
-        }
-
-        rmdir($this->directory);
+        $this->deleteDirectory($this->directory);
 
         parent::tearDown();
+    }
+
+    private function deleteDirectory(string $directory): void
+    {
+        foreach (glob($directory.'/*') ?: [] as $path) {
+            is_dir($path) ? $this->deleteDirectory($path) : unlink($path);
+        }
+
+        rmdir($directory);
     }
 
     public function test_running_build_progress_tracks_seen_stage_markers(): void
@@ -92,5 +97,45 @@ class BuildProgressTest extends TestCase
         ]));
 
         $this->assertFalse($progress['available']);
+    }
+
+    public function test_stages_are_read_from_the_per_template_metadata_file(): void
+    {
+        $templateDirectory = $this->directory.'/templates/proxmox/ubuntu/ubuntu-slim';
+        mkdir($templateDirectory, 0755, true);
+
+        // The published catalog carries no build_stages of its own, only a pointer to the template.
+        file_put_contents($this->directory.'/templates.json', json_encode([
+            'templates' => [[
+                'target' => 'pmx-ubuntu-slim',
+                'name' => 'Ubuntu Slim Proxmox',
+                'template_json_path' => 'templates/proxmox/ubuntu/ubuntu-slim/template.json',
+                'build_requirements' => ['estimated_minutes' => 25],
+            ]],
+        ], JSON_THROW_ON_ERROR));
+
+        file_put_contents($templateDirectory.'/template.json', json_encode([
+            'target' => 'pmx-ubuntu-slim',
+            'name' => 'Ubuntu Slim Proxmox',
+            'build_requirements' => ['estimated_minutes' => 25],
+            'build_stages' => [
+                ['id' => 'prepare-image-generation', 'name' => 'Prepare image generation workspace'],
+                ['id' => 'install-vital-apt-packages', 'name' => 'Install vital apt packages'],
+            ],
+        ], JSON_THROW_ON_ERROR));
+
+        $log = $this->directory.'/build.log';
+        file_put_contents($log, "[image-builder:stage:prepare-image-generation] Prepare\n");
+
+        $progress = (new BuildProgress)->forBuild(new ImageBuild([
+            'target' => 'pmx-ubuntu-slim',
+            'status' => BuildStatus::Running,
+            'log_path' => $log,
+        ]));
+
+        $this->assertTrue($progress['available']);
+        $this->assertSame(2, $progress['stage_count']);
+        $this->assertSame(25, $progress['estimated_minutes']);
+        $this->assertSame('Prepare image generation workspace', $progress['current_stage']['name']);
     }
 }

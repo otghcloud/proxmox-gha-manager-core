@@ -36,9 +36,9 @@ Proxmox nodes, runner templates, pools, and the runner lifecycle.
 | `tests/` | PHPUnit test suite |
 | `docker/` | Production Docker image (nginx, PHP-FPM, Redis, Supervisor) |
 
-This repo depends on a sibling checkout of [proxmox-gha-manager-templates][templates] for the
-Proxmox Packer templates it builds from - see the templates consumption contract in the workspace
-root `README.md` for how that's wired up locally and in Docker builds.
+This repo consumes the published [proxmox-gha-manager-templates][templates] artifact for the
+Proxmox Packer templates it builds from. Point `IMAGE_BUILDER_PATH` at a checkout of that repo
+locally; the Docker image fetches it at build time.
 
 ## Branching
 
