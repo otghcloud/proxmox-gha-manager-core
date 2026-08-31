@@ -21,15 +21,15 @@
 			<div class="col-lg-8">
 				<div class="card mb-3">
 					<div class="card-header">
-						<h3 class="card-title">Proxmox targets</h3>
+						<h3 class="card-title">Proxmox Nodes</h3>
 						<div class="card-actions">
 							<a class="btn btn-sm" href="{{ route('environments.targets.create', $environment) }}">
-								<x-action-content icon="fa-solid fa-plus" label="Add target" />
+								<x-action-content icon="fa-solid fa-plus" label="Add node" />
 							</a>
 						</div>
 					</div>
 					@if ($targets->isEmpty())
-						<div class="card-body text-secondary">No Proxmox targets configured. Provisioning cannot start until an enabled target is added.</div>
+						<div class="card-body text-secondary">No Proxmox nodes configured. Provisioning cannot start until an enabled node is added.</div>
 					@else
 						<div class="table-responsive">
 							<table class="table card-table table-vcenter">
@@ -49,19 +49,6 @@
 							</table>
 						</div>
 					@endif
-				</div>
-
-				<div class="card">
-					<div class="card-header"><h3 class="card-title">Webhook</h3></div>
-					<div class="card-body">
-						<p class="text-secondary">
-							Add this as an organisation webhook in GitHub, content type <code>application/json</code>,
-							subscribed to <strong>Workflow jobs</strong> only.
-						</p>
-						<div class="input-group">
-							<input class="form-control font-monospace" readonly type="text" value="{{ $environment->webhook_url }}">
-						</div>
-					</div>
 				</div>
 
 				<div class="card mt-3">
@@ -105,6 +92,19 @@
 							</table>
 						</div>
 					@endif
+				</div>
+
+				<div class="card">
+					<div class="card-header"><h3 class="card-title">Webhook</h3></div>
+					<div class="card-body">
+						<p class="text-secondary">
+							Add this as an organisation webhook in GitHub, content type <code>application/json</code>,
+							subscribed to <strong>Workflow jobs</strong> only.
+						</p>
+						<div class="input-group">
+							<input class="form-control font-monospace" readonly type="text" value="{{ $environment->webhook_url }}">
+						</div>
+					</div>
 				</div>
 
 				<div class="card mt-3">

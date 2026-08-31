@@ -14,6 +14,7 @@ use App\Models\ProxmoxTarget;
 use App\Models\Runner;
 use App\Services\GitHub\GitHubClient;
 use App\Services\Proxmox\ProxmoxClient;
+use App\Services\SettingsRepository;
 use Illuminate\Support\Facades\Cache;
 use Illuminate\Support\Facades\DB;
 use Illuminate\Support\Facades\Log;
@@ -56,12 +57,14 @@ class Provisioner
             $this->assertCapacity($pool);
 
             return $this->allocator->allocate($this->target, 'runner', fn (int $vmid): Runner => DB::transaction(function () use ($vmid, $pool, $workflowJobId, $repositoryFullName) {
+                $prefix = app(SettingsRepository::class)->runnerNamePrefix();
+
                 return Runner::create([
                     'environment_id' => $this->environment->id,
                     'proxmox_target_id' => $this->target->id,
                     'pool_id' => $pool->id,
                     'vmid' => $vmid,
-                    'runner_name' => sprintf('gha-%s-%d-%s', $pool->name, $vmid, Str::lower(Str::random(8))),
+                    'runner_name' => sprintf('%s-%s', rtrim($prefix, '-'), Str::lower(Str::random(16))),
                     'spawn_reason' => $workflowJobId === null ? SpawnReason::Warm : SpawnReason::Job,
                     'workflow_job_id' => $workflowJobId,
                     'repository_full_name' => $repositoryFullName,

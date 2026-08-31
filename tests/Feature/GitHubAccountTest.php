@@ -20,6 +20,14 @@ class GitHubAccountTest extends TestCase
         $this->actingAs(User::factory()->create());
     }
 
+    public function test_account_create_page_hides_webhook_uuid(): void
+    {
+        $this->get(route('github-accounts.create'))
+            ->assertOk()
+            ->assertDontSee('Webhook UUID')
+            ->assertDontSee('name="webhook_id"', false);
+    }
+
     public function test_account_edit_page_exposes_webhook_uuid(): void
     {
         $account = $this->account();

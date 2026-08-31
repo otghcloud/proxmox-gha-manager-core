@@ -5,6 +5,7 @@ namespace App\Http\Controllers;
 use App\DataTables\WorkflowJobsDataTable;
 use App\Models\Environment;
 use App\Models\WorkflowJob;
+use Illuminate\Http\RedirectResponse;
 use Illuminate\Http\Response;
 use Illuminate\View\View;
 use Symfony\Component\HttpFoundation\BinaryFileResponse;
@@ -42,5 +43,13 @@ class WorkflowJobController extends Controller
             'Content-Type' => 'text/plain; charset=UTF-8',
             'Content-Disposition' => 'inline; filename="job-'.$job->github_job_id.'.log"',
         ]);
+    }
+
+    public function destroy(WorkflowJob $job): RedirectResponse
+    {
+        $job->delete();
+
+        return redirect()->route('jobs.index')
+            ->with('success', "Job {$job->job_name} has been deleted.");
     }
 }

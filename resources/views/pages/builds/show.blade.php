@@ -25,6 +25,9 @@
 					<div class="h3 mb-0 text-truncate">
 						@if ($build->runnerTemplate)
 							<a href="{{ route('templates.show', $build->runnerTemplate) }}">{{ $build->runnerTemplate->name }}</a>
+							@if ($build->runnerTemplate->target_mapping?->pivot->version)
+								<span class="text-muted small">(v{{ $build->runnerTemplate->target_mapping->pivot->version }})</span>
+							@endif
 						@else
 							&mdash;
 						@endif
@@ -47,12 +50,6 @@
 				<div class="card-body">
 					<div class="subheader">Finished</div>
 					<div class="h3 mb-0">{{ $build->finished_at?->forDisplay()->format('M j, g:i A') ?? '—' }}</div>
-				</div>
-			</div>
-			<div class="card">
-				<div class="card-body">
-					<div class="subheader">Exit code</div>
-					<div class="h3 mb-0">{{ $build->exit_code ?? '—' }}</div>
 				</div>
 			</div>
 		</div>

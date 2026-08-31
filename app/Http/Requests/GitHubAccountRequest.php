@@ -21,7 +21,8 @@ class GitHubAccountRequest extends FormRequest
             'account_type' => ['required', Rule::in(['organization', 'user'])],
             'login' => ['required', 'string', 'max:255'],
             'webhook_id' => [
-                'required', 'uuid',
+                $account === null ? 'nullable' : 'required',
+                'uuid',
                 Rule::unique('github_accounts', 'webhook_id')->ignore($account),
             ],
             'github_token' => [$secret, 'string'],

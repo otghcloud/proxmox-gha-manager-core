@@ -4,7 +4,9 @@
 	<div class="card-body"><div class="row g-3">
 		<div class="col-md-4"><label class="form-label required" for="account_type">Type</label><select class="form-select" id="account_type" name="account_type" required><option value="organization" @selected(old('account_type', $account->account_type) === 'organization')>Organisation</option><option value="user" @selected(old('account_type', $account->account_type) === 'user')>Personal user</option></select></div>
 		<div class="col-md-8"><label class="form-label required" for="login">GitHub login</label><input class="form-control" id="login" name="login" required value="{{ old('login', $account->login) }}"></div>
+		@if ($isUpdate)
 		<div class="col-12"><label class="form-label required" for="webhook_id">Webhook UUID</label><input class="form-control font-monospace" id="webhook_id" name="webhook_id" required value="{{ old('webhook_id', $account->webhook_id) }}"><small class="form-hint">Changing this changes the webhook URL. Update the webhook in GitHub after saving.</small></div>
+		@endif
 		<div class="col-md-6"><label class="form-label {{ $isUpdate ? '' : 'required' }}" for="github_token">GitHub token</label><input class="form-control" id="github_token" name="github_token" type="password" {{ $isUpdate ? '' : 'required' }}></div>
 		<div class="col-md-6"><label class="form-label {{ $isUpdate ? '' : 'required' }}" for="github_webhook_secret">Webhook secret</label><input class="form-control" id="github_webhook_secret" name="github_webhook_secret" type="password" {{ $isUpdate ? '' : 'required' }}></div>
 		<div class="col-md-6"><label class="form-label required" for="github_api_url">API URL</label><input class="form-control" id="github_api_url" name="github_api_url" type="url" required value="{{ old('github_api_url', $account->github_api_url) }}"></div>

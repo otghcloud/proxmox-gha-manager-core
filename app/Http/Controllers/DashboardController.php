@@ -19,6 +19,12 @@ class DashboardController extends Controller
                 'pools',
                 'runnerTemplates',
             ])
+            ->addSelect([
+                'proxmox_targets_count' => ProxmoxTarget::selectRaw('COUNT(DISTINCT pool_proxmox_target.proxmox_target_id)')
+                    ->join('pool_proxmox_target', 'proxmox_targets.id', '=', 'pool_proxmox_target.proxmox_target_id')
+                    ->join('pools', 'pool_proxmox_target.pool_id', '=', 'pools.id')
+                    ->where('pools.environment_id', '=', 'environments.id'),
+            ])
             ->orderBy('name')
             ->get();
 

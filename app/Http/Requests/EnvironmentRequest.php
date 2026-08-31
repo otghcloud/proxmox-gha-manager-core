@@ -22,11 +22,11 @@ class EnvironmentRequest extends FormRequest
 
         return [
             'name' => ['required', 'string', 'max:255'],
-            'github_account_id' => ['required', 'exists:github_accounts,id'],
             'slug' => [
                 'required', 'string', 'max:255', 'alpha_dash',
                 Rule::unique('environments', 'slug')->ignore($environment),
             ],
+            'github_account_id' => ['required', 'exists:github_accounts,id'],
             'enabled' => ['boolean'],
 
             'max_lifetime_seconds' => ['required', 'integer', 'min:60'],
