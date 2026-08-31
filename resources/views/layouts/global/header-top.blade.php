@@ -5,8 +5,8 @@
 		</button>
 
 		<div class="navbar-brand navbar-brand-autodark d-none-navbar-horizontal pe-0 pe-md-3" data-bs-theme="dark">
-			<a aria-label="OTGH Cloud" href="{{ route('dashboard') }}">
-				<img src="{{ asset('default_logo.png') }}" width="100" alt="OTGH Cloud" />
+			<a aria-label="Proxmox GHA Manager" href="{{ route('dashboard') }}">
+				<img src="{{ asset('default_logo_white.png') }}" width="220" alt="Proxmox GHA Manager" />
 			</a>
 		</div>
 

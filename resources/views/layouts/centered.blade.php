@@ -16,7 +16,7 @@
 
 				<div class="text-center mb-4">
 					<a href="{{ url('/') }}">
-						<img src="{{ asset('default_logo_dark.png') }}" width="180" alt="OTGH Cloud" />
+						<img src="{{ asset('default_logo_dark.png') }}" width="300" alt="Proxmox GHA Manager" />
 					</a>
 				</div>
 
