@@ -12,10 +12,6 @@ jobs:
     runs-on: [self-hosted, ubuntu-latest]
     steps:
       - name: Check out code
-        # Build context is the workspace root: the Dockerfile also needs the sibling
-        # proxmox-gha-manager-templates checkout, so this workflow only runs where both
-        # repos are checked out side by side (see the templates consumption contract in
-        # the workspace README).
         uses: actions/checkout@v7
         with:
           submodules: false

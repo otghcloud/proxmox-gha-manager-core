@@ -64,15 +64,6 @@ jobs:
           ref: ${{ needs.version.outputs.release_sha }}
           fetch-depth: 0
           submodules: false
-          path: proxmox-gha-manager-core
-
-      - name: Checkout templates
-        uses: actions/checkout@v7
-        with:
-          repository: otghcloud/proxmox-gha-manager-templates
-          ref: ${{ github.event.inputs.templates_ref || 'main' }}
-          submodules: recursive
-          path: proxmox-gha-manager-templates
 
       - name: Set up Docker Buildx
         uses: docker/setup-buildx-action@v4
@@ -88,8 +79,10 @@ jobs:
         uses: docker/build-push-action@v7
         with:
           context: .
-          file: proxmox-gha-manager-core/docker/Dockerfile
+          file: docker/Dockerfile
           push: true
+          build-args: |
+            TEMPLATES_REF=${{ inputs.templates_ref || 'main' }}
           tags: |
             ${{ env.IMAGE }}:v${{ needs.version.outputs.version }}
             ${{ env.IMAGE }}:latest
