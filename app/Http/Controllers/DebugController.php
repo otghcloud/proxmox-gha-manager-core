@@ -13,7 +13,7 @@ use Illuminate\Http\Request;
 use Illuminate\Support\Facades\Artisan;
 use Illuminate\Support\Facades\DB;
 use Illuminate\View\View;
-use Symfony\Component\HttpFoundation\BinaryFileResponse;
+use Symfony\Component\HttpFoundation\StreamedResponse;
 use ZipArchive;
 
 class DebugController extends Controller
@@ -93,31 +93,35 @@ class DebugController extends Controller
     /**
      * Export .env and SQLite database in a zip archive.
      */
-    public function exportConfig(): BinaryFileResponse
+    public function exportConfig(): StreamedResponse
     {
         $zipFilename = 'proxmox-gha-manager-export-'.date('YmdHis').'.zip';
-        $tempZipPath = tempnam(sys_get_temp_dir(), 'cfg_export_').'.zip';
 
-        $zip = new ZipArchive;
-        if ($zip->open($tempZipPath, ZipArchive::CREATE | ZipArchive::OVERWRITE) !== true) {
-            abort(500, 'Failed to create configuration zip archive.');
-        }
+        return response()->streamDownload(function (): void {
+            $tempZipPath = tempnam(sys_get_temp_dir(), 'cfg_export_').'.zip';
 
-        $envPath = base_path('.env');
-        if (file_exists($envPath)) {
-            $zip->addFile($envPath, '.env');
-        }
+            $zip = new ZipArchive;
+            if ($zip->open($tempZipPath, ZipArchive::CREATE | ZipArchive::OVERWRITE) === true) {
+                $envPath = base_path('.env');
+                if (file_exists($envPath)) {
+                    $zip->addFile($envPath, '.env');
+                }
 
-        $dbPath = config('database.connections.sqlite.database');
-        if (is_string($dbPath) && file_exists($dbPath)) {
-            $zip->addFile($dbPath, 'database.sqlite');
-        }
+                $dbPath = config('database.connections.sqlite.database');
+                if (is_string($dbPath) && file_exists($dbPath)) {
+                    $zip->addFile($dbPath, 'database.sqlite');
+                }
 
-        $zip->close();
+                $zip->close();
+            }
 
-        return response()->download($tempZipPath, $zipFilename, [
+            if (file_exists($tempZipPath)) {
+                readfile($tempZipPath);
+                @unlink($tempZipPath);
+            }
+        }, $zipFilename, [
             'Content-Type' => 'application/zip',
-        ])->deleteFileAfterSend(true);
+        ]);
     }
 
     /**

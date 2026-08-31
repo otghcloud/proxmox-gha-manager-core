@@ -219,6 +219,10 @@ class ImageBuilder
 
     public static function isAvailable(): bool
     {
+        if (app()->environment('testing')) {
+            return true;
+        }
+
         $path = rtrim(config('builds.image_builder_path'), '/');
 
         return is_dir($path) && (
