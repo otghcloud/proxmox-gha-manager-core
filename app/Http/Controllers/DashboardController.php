@@ -7,7 +7,6 @@ use App\DataTables\RecentRunnersDataTable;
 use App\Enums\RunnerState;
 use App\Models\Environment;
 use App\Models\ProxmoxTarget;
-use Illuminate\Database\Eloquent\Builder;
 use Illuminate\View\View;
 
 class DashboardController extends Controller
