@@ -13,7 +13,7 @@ docker run -d --name proxmox-gha-manager-core \
   -v proxmox-gha-manager-core-data:/data \
   -e APP_URL=https://runners.example.com \
   -e TRUSTED_PROXIES='*' \
-  ghcr.io/otghcloud/proxmox-gha-manager-core/proxmox-gha-manager-core:latest
+  ghcr.io/otghcloud/proxmox-gha-manager-core:latest
 ```
 
 Open the address in a browser and the setup wizard will guide you through the rest of the setup and configuration.
