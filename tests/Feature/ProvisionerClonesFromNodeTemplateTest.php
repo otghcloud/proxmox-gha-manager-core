@@ -4,6 +4,7 @@ namespace Tests\Feature;
 
 use App\Enums\PoolOs;
 use App\Enums\RunnerState;
+use App\Enums\SpawnReason;
 use App\Exceptions\ProvisioningException;
 use App\Exceptions\ProxmoxException;
 use App\Models\Environment;
@@ -85,6 +86,32 @@ class ProvisionerClonesFromNodeTemplateTest extends TestCase
             && ($request->data()['net0'] ?? null) === 'virtio,bridge=vmbr7,tag=120');
     }
 
+    public function test_runners_on_another_node_do_not_exhaust_the_selected_nodes_capacity(): void
+    {
+        $first = $this->makeNode('pve01', 'https://pve01.example.com:8006/api2/json', templateVmid: 801);
+        $second = $this->makeNode('pve02', 'https://pve02.example.com:8006/api2/json', templateVmid: 802);
+        $pool = $this->makePool([$first, $second]);
+
+        foreach (range(1, 12) as $offset) {
+            Runner::create([
+                'environment_id' => $this->environment->id,
+                'proxmox_target_id' => $second->id,
+                'pool_id' => $pool->id,
+                'vmid' => 950 + $offset,
+                'runner_name' => "gha-existing-{$offset}",
+                'spawn_reason' => SpawnReason::Warm,
+                'state' => RunnerState::Idle,
+                'state_changed_at' => now(),
+            ]);
+        }
+
+        $this->fakeProxmox();
+
+        $this->spawnAndExpectNoBoot($pool, $first);
+
+        Http::assertSent(fn (Request $request): bool => str_contains($request->url(), 'https://pve01.example.com:8006/api2/json/nodes/pve01/qemu/801/clone'));
+    }
+
     public function test_a_node_without_a_vlan_gets_an_untagged_adapter(): void
     {
         $node = $this->makeNode('pve01', 'https://pve01.example.com:8006/api2/json', templateVmid: 801, bridge: 'vmbr0');
@@ -123,7 +150,7 @@ class ProvisionerClonesFromNodeTemplateTest extends TestCase
             $this->assertStringContainsString('never reported an IPv4 address', $e->getMessage());
         }
 
-        $this->assertSame(RunnerState::Failed, Runner::firstOrFail()->state);
+        $this->assertSame(RunnerState::Failed, Runner::latest('id')->firstOrFail()->state);
     }
 
     private function makeNode(string $slug, string $url, ?int $templateVmid, string $bridge = 'vmbr0', ?int $vlan = null): ProxmoxTarget

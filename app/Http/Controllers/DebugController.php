@@ -10,7 +10,6 @@ use App\Models\RunnerEvent;
 use App\Services\SettingsRepository;
 use Illuminate\Http\RedirectResponse;
 use Illuminate\Http\Request;
-use Illuminate\Support\Facades\Artisan;
 use Illuminate\Support\Facades\DB;
 use Illuminate\View\View;
 use Symfony\Component\HttpFoundation\StreamedResponse;
@@ -49,14 +48,11 @@ class DebugController extends Controller
         return back()->with('success', "{$label} ".($request->boolean('enabled') ? 'enabled.' : 'disabled.'));
     }
 
-    /**
-     * Queued rather than run inline, because destroying every VM can take minutes.
-     */
     public function reapAll(): RedirectResponse
     {
-        Artisan::queue('runners:reap', ['--all' => true]);
+        $this->settings->set(SettingsRepository::FORCE_REAP_ALL_REQUESTED, '1');
 
-        return back()->with('success', 'Queued a forced reap of every managed VM.');
+        return back()->with('success', 'The next scheduled reaper pass will force-reap every managed VM.');
     }
 
     public function clearRunnerHistory(): RedirectResponse

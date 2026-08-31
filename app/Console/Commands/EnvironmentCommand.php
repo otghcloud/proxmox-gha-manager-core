@@ -13,11 +13,15 @@ abstract class EnvironmentCommand extends Command
      *
      * @return Collection<int, Environment>
      */
-    protected function environments(): Collection
+    protected function environments(bool $includeDisabled = false): Collection
     {
         $slug = $this->option('environment');
 
-        $query = Environment::query()->where('enabled', true)->orderBy('name');
+        $query = Environment::query()->orderBy('name');
+
+        if (! $includeDisabled) {
+            $query->where('enabled', true);
+        }
 
         if (is_string($slug) && $slug !== '') {
             $query->where('slug', $slug);
@@ -26,9 +30,11 @@ abstract class EnvironmentCommand extends Command
         $environments = $query->get();
 
         if ($environments->isEmpty()) {
+            $status = $includeDisabled ? '' : 'enabled ';
+
             $this->warn(is_string($slug) && $slug !== ''
-                ? "No enabled environment matches '{$slug}'."
-                : 'No enabled environments are configured.');
+                ? "No {$status}environment matches '{$slug}'."
+                : "No {$status}environments are configured.");
         }
 
         return $environments;
