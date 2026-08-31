@@ -32,6 +32,8 @@ class SettingsRepository
 
     public const TEMPLATE_UPDATES_AVAILABLE = 'template_updates_available';
 
+    public const RUNNER_NAME_PREFIX = 'runner_name_prefix';
+
     public function templateAutoCheckEnabled(): bool
     {
         return $this->bool(self::TEMPLATE_AUTO_CHECK_ENABLED, false);
@@ -45,6 +47,13 @@ class SettingsRepository
     public function jobLogRetentionDays(): int
     {
         return max(1, (int) $this->get(self::JOB_LOG_RETENTION_DAYS, 14));
+    }
+
+    public function runnerNamePrefix(): string
+    {
+        $prefix = trim((string) $this->get(self::RUNNER_NAME_PREFIX, 'gha'));
+
+        return $prefix === '' ? 'gha' : $prefix;
     }
 
     public function templateRetentionMode(): string

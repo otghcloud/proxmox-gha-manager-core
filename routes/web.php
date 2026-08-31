@@ -80,6 +80,7 @@ Route::middleware('auth')->group(function (): void {
         Route::get('/jobs', [WorkflowJobController::class, 'index'])->name('jobs.index');
         Route::get('/jobs/{job}', [WorkflowJobController::class, 'show'])->name('jobs.show');
         Route::get('/jobs/{job}/log', [WorkflowJobController::class, 'log'])->name('jobs.log');
+        Route::delete('/jobs/{job}', [WorkflowJobController::class, 'destroy'])->name('jobs.destroy');
     });
 
     Route::prefix('administration')->group(function (): void {

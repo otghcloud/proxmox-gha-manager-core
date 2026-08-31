@@ -19,7 +19,7 @@ class ProxmoxClient
     /** Tag applied to every VM this application creates, used for reconciliation. */
     public const MANAGED_TAG = 'gha-runner';
 
-    public const MANAGED_BY = 'github-actions-runner-manager-proxmox';
+    public const MANAGED_BY = 'pmx-gha-manager';
 
     public function __construct(private readonly Environment|ProxmoxTarget $connection) {}
 

@@ -6,7 +6,6 @@
 		<div class="card-header"><h3 class="card-title">Connection</h3></div>
 		<div class="card-body"><div class="row g-3">
 			<div class="col-md-6"><label class="form-label required" for="name">Name</label><input class="form-control" id="name" name="name" required type="text" value="{{ old('name', $target->name) }}"></div>
-			<div class="col-md-6"><label class="form-label" for="slug">Slug</label><input class="form-control" id="slug" name="slug" type="text" value="{{ old('slug', $target->slug) }}"></div>
 			<label class="form-check form-switch mb-2 ms-3"><input class="form-check-input" name="drained" type="checkbox" value="1" @checked(old('drained', $target->drained_at !== null))><span class="form-check-label">Drain node</span></label>
 			<div class="col-md-8"><label class="form-label required" for="proxmox_url">Proxmox API URL</label><input class="form-control" id="proxmox_url" name="proxmox_url" required type="url" value="{{ old('proxmox_url', $target->proxmox_url) }}"></div>
 			<div class="col-md-4"><label class="form-label required" for="proxmox_node">Node name</label><input class="form-control" id="proxmox_node" name="proxmox_node" required type="text" value="{{ old('proxmox_node', $target->proxmox_node) }}"></div>

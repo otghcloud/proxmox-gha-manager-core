@@ -35,6 +35,7 @@ export default function initTemplateTargetMappings() {
                 <td>${esc(target?.name)} <span class="text-secondary">(${esc(target?.node)})</span></td>
                 <td class="text-secondary">${mapping.templateVmid ? esc(mapping.templateVmid) : 'Allocated on build'}</td>
                 <td><select class="form-select form-select-sm" data-iso-select data-target-id="${id}" data-iso-url="${esc(target?.isoUrl)}" name="mappings[${id}][build_iso_file]"><option value="${esc(mapping.buildIsoFile || '')}">${mapping.buildIsoFile ? esc(mapping.buildIsoFile) : 'Load ISO options'}</option></select><small class="text-secondary" data-iso-status></small></td>
+                <td><input class="form-control form-control-sm" name="mappings[${id}][build_iso_url]" type="url" placeholder="https://..." value="${esc(mapping.buildIsoUrl || '')}"></td>
                 <td><input class="form-control form-control-sm" name="mappings[${id}][build_cores]" type="number" min="1" placeholder="6" value="${esc(mapping.buildCores || '')}"></td>
                 <td><input class="form-control form-control-sm" name="mappings[${id}][build_memory_mb]" type="number" min="1024" placeholder="8192" value="${esc(mapping.buildMemoryMb || '')}"></td>
                 <td><input class="form-control form-control-sm" name="mappings[${id}][build_disk_gb]" type="number" min="20" placeholder="160" value="${esc(mapping.buildDiskGb || '')}"></td>

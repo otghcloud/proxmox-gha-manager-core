@@ -2,7 +2,6 @@
 
 namespace App\DataTables;
 
-use App\Helpers\DataTableHelpers;
 use App\Models\Runner;
 use Illuminate\Database\Eloquent\Builder as QueryBuilder;
 use Yajra\DataTables\EloquentDataTable;
@@ -23,14 +22,8 @@ class ActiveRunnersDataTable extends DataTable
                 .'<div class="text-secondary small">'.e($runner->environment->name).'</div>')
             ->editColumn('state', fn (Runner $runner): string => '<span class="badge bg-'.$runner->state->colour().'-lt runner-state">'.$runner->state->label().'</span>')
             ->editColumn('created_at', fn (Runner $runner): string => $runner->created_at->diffForHumans())
-            ->addColumn('actions', fn (Runner $runner): string => DataTableHelpers::actionsDropdown([
-                ['type' => 'view', 'href' => route('runners.show', $runner)],
-                ['type' => 'delete', 'label' => 'Destroy', 'href' => route('runners.destroy', $runner), 'attributes' => [
-                    'data-delete-message' => 'This stops the VM, deregisters the runner and deletes its disks.',
-                ]],
-            ]))
             ->filterColumn('pool', fn (QueryBuilder $query, string $keyword) => $query->where(fn (QueryBuilder $q) => $q->whereRelation('pool', 'name', 'like', "%{$keyword}%")->orWhereRelation('environment', 'name', 'like', "%{$keyword}%")))
-            ->rawColumns(['runner_name', 'pool', 'state', 'actions'])
+            ->rawColumns(['runner_name', 'pool', 'state'])
             ->setRowId('id');
     }
 
@@ -67,7 +60,6 @@ class ActiveRunnersDataTable extends DataTable
             Column::computed('pool')->title('Pool'),
             Column::make('state')->width(100),
             Column::make('created_at')->title('Created')->width(120)->searchable(false),
-            Column::computed('actions')->width(60)->addClass('text-end'),
         ];
     }
 

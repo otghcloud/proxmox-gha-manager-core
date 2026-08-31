@@ -1,7 +1,7 @@
 @php($isUpdate = $template->exists)
 @php($existingMappings = $template->targetMappings->keyBy('id'))
 @php($targetCatalog = $targets->map(fn ($target) => ['id' => $target->id, 'name' => $target->name, 'node' => $target->proxmox_node, 'isoUrl' => route('nodes.isos', $target)])->values()->all())
-@php($mappingCatalog = $existingMappings->map(fn ($target) => ['id' => $target->id, 'templateVmid' => $target->pivot->template_vmid, 'buildIsoFile' => $target->pivot->build_iso_file, 'buildCores' => $target->pivot->build_cores, 'buildMemoryMb' => $target->pivot->build_memory_mb, 'buildDiskGb' => $target->pivot->build_disk_gb])->values()->all())
+@php($mappingCatalog = $existingMappings->map(fn ($target) => ['id' => $target->id, 'templateVmid' => $target->pivot->template_vmid, 'buildIsoFile' => $target->pivot->build_iso_file, 'buildIsoUrl' => $target->pivot->build_iso_url, 'buildCores' => $target->pivot->build_cores, 'buildMemoryMb' => $target->pivot->build_memory_mb, 'buildDiskGb' => $target->pivot->build_disk_gb])->values()->all())
 
 <div data-template-form data-target-catalog="{{ base64_encode(json_encode($targetCatalog, JSON_THROW_ON_ERROR)) }}" data-existing-mappings="{{ base64_encode(json_encode($mappingCatalog, JSON_THROW_ON_ERROR)) }}">
 	<div class="card">
@@ -66,7 +66,7 @@
 					@endforeach
 				</select>
 			</div>
-			<div class="col-12"><div class="table-responsive"><table class="table table-vcenter"><thead><tr><th>Node</th><th>Current VMID</th><th>Installation ISO</th><th>Build cores</th><th>Build memory</th><th>Build disk</th></tr></thead><tbody data-template-mapping-rows></tbody></table></div><div class="text-secondary small" data-template-mapping-empty>Select one or more Proxmox nodes above to configure their physical template.</div></div>
+			<div class="col-12"><div class="table-responsive"><table class="table table-vcenter"><thead><tr><th>Node</th><th>Current VMID</th><th>Installation ISO</th><th>ISO URL</th><th>Build cores</th><th>Build memory</th><th>Build disk</th></tr></thead><tbody data-template-mapping-rows></tbody></table></div><div class="text-secondary small" data-template-mapping-empty>Select one or more Proxmox nodes above to configure their physical template.</div></div>
 		</div>
 	</div>
 	<div class="card-footer text-end">

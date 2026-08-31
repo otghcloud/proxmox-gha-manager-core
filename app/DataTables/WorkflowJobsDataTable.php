@@ -35,6 +35,7 @@ class WorkflowJobsDataTable extends DataTable
             ->editColumn('created_at', fn (WorkflowJob $job): string => $job->created_at->diffForHumans())
             ->addColumn('actions', fn (WorkflowJob $job): string => DataTableHelpers::actionsDropdown([
                 ['type' => 'view', 'href' => route('jobs.show', $job)],
+                ['type' => 'delete', 'href' => route('jobs.destroy', $job)],
             ]))
             ->filterColumn('environment', fn (QueryBuilder $query, string $keyword) => $query->whereRelation('environment', 'name', 'like', "%{$keyword}%"))
             ->filterColumn('runner', fn (QueryBuilder $query, string $keyword) => $query->where('runner_name', 'like', "%{$keyword}%"))

@@ -83,6 +83,14 @@ class RunnerLifecycleTest extends TestCase
         );
     }
 
+    public function test_new_runner_names_follow_the_new_gha_pattern(): void
+    {
+        $name = 'gha-'.strtolower(bin2hex(random_bytes(8)));
+
+        $this->assertMatchesRegularExpression('/^gha-[a-f0-9]{16}$/', $name);
+        $this->assertMatchesRegularExpression('/^gha-[a-f0-9]{16}$/', 'gha-'.strtolower(bin2hex(random_bytes(8))));
+    }
+
     public function test_a_live_vmid_cannot_be_reused(): void
     {
         $this->makeRunner(9000, 'gha-a', RunnerState::Idle);

@@ -5,6 +5,7 @@ namespace App\Http\Controllers;
 use App\Http\Requests\GitHubAccountRequest;
 use App\Models\GitHubAccount;
 use Illuminate\Http\RedirectResponse;
+use Illuminate\Support\Str;
 use Illuminate\View\View;
 
 class GitHubAccountController extends Controller
@@ -21,7 +22,10 @@ class GitHubAccountController extends Controller
 
     public function store(GitHubAccountRequest $request): RedirectResponse
     {
-        $account = GitHubAccount::create($request->validated());
+        $data = $request->validated();
+        $data['webhook_id'] ??= Str::uuid()->toString();
+
+        $account = GitHubAccount::create($data);
 
         return redirect()->route('github-accounts.index')->with('success', "GitHub account {$account->login} created.");
     }

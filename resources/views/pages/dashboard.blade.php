@@ -55,8 +55,10 @@
 									<div class="col">
 										<div class="h4 mb-0">{{ $environment->pools_count }}</div>
 										<div class="text-secondary small">Pools</div>
-									</div>
-								</div>
+									</div>								<div class="col">
+									<div class="h4 mb-0">{{ $environment->proxmox_targets_count ?? 0 }}</div>
+									<div class="text-secondary small">Nodes</div>
+								</div>								</div>
 							</div>
 						</div>
 					</div>
