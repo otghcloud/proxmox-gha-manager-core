@@ -4,10 +4,7 @@
 			<div class="col-lg-auto ms-lg-auto">
 				<ul class="list-inline list-inline-dots mb-0">
 					<li class="list-inline-item">
-						<a class="link-secondary" href="https://otghcloud.github.io/github-actions-proxmox/" rel="noopener" target="_blank">Documentation</a>
-					</li>
-					<li class="list-inline-item">
-						<a class="link-secondary" href="https://github.com/otghcloud/github-actions-proxmox" rel="noopener" target="_blank">Source</a>
+						<a class="link-secondary" href="https://github.com/otghcloud/proxmox-gha-manager-core" rel="noopener" target="_blank">Source</a>
 					</li>
 				</ul>
 			</div>
@@ -17,7 +14,7 @@
 						Copyright &copy; {{ date('Y') }} Aurora Technology (OTGH) Ltd
 					</li>
 					<li class="list-inline-item">
-						Proxmox Manager {{ app_version() }}
+						Proxmox GHA Manager {{ app_version() }}
 					</li>
 				</ul>
 			</div>

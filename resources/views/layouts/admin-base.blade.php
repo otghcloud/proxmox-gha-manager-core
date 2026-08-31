@@ -5,7 +5,7 @@
 		<meta charset="utf-8" />
 		<meta content="width=device-width, initial-scale=1, viewport-fit=cover" name="viewport" />
 		<meta content="{{ csrf_token() }}" name="csrf-token" />
-		<title>@yield('meta-page-title', 'Proxmox Actions Manager') :: Proxmox Actions Manager</title>
+		<title>@yield('meta-page-title', 'Proxmox GHA Manager') :: Proxmox GHA Manager</title>
 		<meta content="#662071" name="theme-color" />
 		<meta content="Ephemeral GitHub Actions runners backed by Proxmox VE" name="description" />
 

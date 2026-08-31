@@ -4,7 +4,7 @@
 	<head>
 		<meta charset="utf-8" />
 		<meta content="width=device-width, initial-scale=1, viewport-fit=cover" name="viewport" />
-		<title>@yield('meta-page-title', 'Sign in') :: Proxmox Manager</title>
+		<title>@yield('meta-page-title', 'Sign in') :: Proxmox GHA Manager</title>
 		<meta content="#662071" name="theme-color" />
 
 		@vite(['resources/sass/backend.scss', 'resources/js/app.js'])

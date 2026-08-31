@@ -5,7 +5,7 @@
 @section('content')
 	<div class="card card-md mb-3">
 		<div class="card-body">
-			<h2 class="h2 text-center mb-1">Welcome to Proxmox Manager</h2>
+			<h2 class="h2 text-center mb-1">Welcome to Proxmox GHA Manager</h2>
 			<p class="text-secondary text-center mb-4">A few details and you will be ready to provision runners.</p>
 
 			<h3 class="h4">Requirements</h3>

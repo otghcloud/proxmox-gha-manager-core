@@ -7,7 +7,7 @@
 		@csrf
 
 		<div class="card-body">
-			<h2 class="h2 text-center mb-4">Sign in to Proxmox Manager</h2>
+			<h2 class="h2 text-center mb-4">Sign in to Proxmox GHA Manager</h2>
 
 			<div class="mb-3">
 				<label class="form-label" for="email">Email address</label>
