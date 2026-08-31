@@ -68,7 +68,7 @@ class ImageBuilder
             (string) $account->linux_ssh_password,
         );
 
-        $process = $this->runPacker($templateDirectory, $this->environmentVariables($build), $logPath);
+        $process = $this->runPacker($templateDirectory, $this->buildEnvironment($build, $target), $logPath);
 
         DB::transaction(function () use ($build, $process, $template, $target) {
             $build->forceFill([
@@ -100,6 +100,23 @@ class ImageBuilder
         });
 
         $this->rebuilder->advanceBatch($build->refresh());
+    }
+
+    /**
+     * Kept separate from environmentVariables(): locating the scripts root can fetch from the network.
+     *
+     * @return array<string, string>
+     */
+    private function buildEnvironment(ImageBuild $build, BuildTarget $target): array
+    {
+        $variables = $this->environmentVariables($build);
+        $scriptsRoot = $this->runnerImages->scriptsRoot($target);
+
+        if ($scriptsRoot !== null) {
+            $variables[$target->scriptsRootVariable()] = $scriptsRoot;
+        }
+
+        return $variables;
     }
 
     /**
@@ -238,12 +255,6 @@ class ImageBuilder
             if ($value !== null) {
                 $variables[$sizing[$key]] = (string) $value;
             }
-        }
-
-        $scriptsRoot = $this->runnerImages->scriptsRoot($target);
-
-        if ($scriptsRoot !== null) {
-            $variables[$target->scriptsRootVariable()] = $scriptsRoot;
         }
 
         return $variables;
