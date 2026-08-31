@@ -196,7 +196,7 @@ class Provisioner
 
     private function assertCapacity(Pool $pool): void
     {
-        $total = Runner::forEnvironment($this->environment)->active()->count();
+        $total = $this->target->runners()->active()->count();
 
         if ($total >= $this->target->max_total_vms) {
             throw new CapacityException(

@@ -11,9 +11,8 @@ use App\Models\ProxmoxTarget;
 use App\Models\Runner;
 use App\Models\User;
 use App\Services\SettingsRepository;
-use Illuminate\Foundation\Console\QueuedCommand;
 use Illuminate\Foundation\Testing\RefreshDatabase;
-use Illuminate\Support\Facades\Queue;
+use Illuminate\Support\Facades\Http;
 use Tests\TestCase;
 
 class DebugConsoleTest extends TestCase
@@ -99,13 +98,32 @@ class DebugConsoleTest extends TestCase
             ->assertExitCode(0);
     }
 
-    public function test_reap_all_is_queued(): void
+    public function test_reap_all_is_requested_for_the_next_scheduled_pass(): void
     {
-        Queue::fake();
-
         $this->post(route('debug.reap-all'))->assertRedirect();
 
-        Queue::assertPushed(QueuedCommand::class);
+        $this->assertTrue(app(SettingsRepository::class)->bool(SettingsRepository::FORCE_REAP_ALL_REQUESTED, false));
+    }
+
+    public function test_scheduled_force_reap_ignores_normal_reaping_rules_and_consumes_the_request(): void
+    {
+        $runner = $this->runner(901, RunnerState::Idle);
+        $settings = app(SettingsRepository::class);
+        $settings->set(SettingsRepository::REAPING_ENABLED, '0');
+        $settings->set(SettingsRepository::FORCE_REAP_ALL_REQUESTED, '1');
+
+        Http::fake([
+            '*/qemu/901/status/current*' => Http::response(['data' => ['status' => 'stopped']]),
+            '*/tasks/*' => Http::response(['data' => ['status' => 'stopped', 'exitstatus' => 'OK']]),
+            '*' => Http::response(['data' => 'UPID:pve:0000:0000:0000:qmdelete:901:root@pam:']),
+        ]);
+
+        $this->artisan('runners:reap')
+            ->expectsOutputToContain('Destroyed 1 VM(s) in total.')
+            ->assertExitCode(0);
+
+        $this->assertSame(RunnerState::Destroyed, $runner->fresh()->state);
+        $this->assertFalse($settings->bool(SettingsRepository::FORCE_REAP_ALL_REQUESTED, false));
     }
 
     public function test_runner_history_is_cleared_without_touching_live_runners(): void

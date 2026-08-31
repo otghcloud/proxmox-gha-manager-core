@@ -18,7 +18,8 @@ class RunnersReapCommand extends EnvironmentCommand
 
     public function handle(EnvironmentServices $services, SettingsRepository $settings): int
     {
-        $all = (bool) $this->option('all');
+        $requestedForceReap = $settings->bool(SettingsRepository::FORCE_REAP_ALL_REQUESTED, false);
+        $all = (bool) $this->option('all') || $requestedForceReap;
 
         if (! $settings->bool(SettingsRepository::REAPING_ENABLED) && ! $all && ! $this->option('force')) {
             $this->components->warn('Reaping is disabled in the debug settings; skipping.');
@@ -29,8 +30,8 @@ class RunnersReapCommand extends EnvironmentCommand
         $total = 0;
         $hasErrors = false;
 
-        foreach ($this->environments() as $environment) {
-            foreach (ProxmoxTarget::query()->where('enabled', true)->orderBy('name')->get() as $target) {
+        foreach ($this->environments($all) as $environment) {
+            foreach (ProxmoxTarget::query()->when(! $all, fn ($query) => $query->where('enabled', true))->orderBy('name')->get() as $target) {
                 try {
                     $reaper = $services->reaper($environment, $target);
                     $destroyed = $all ? $reaper->destroyAll() : $reaper->runOnce();
@@ -45,6 +46,10 @@ class RunnersReapCommand extends EnvironmentCommand
         }
 
         $this->line("Destroyed {$total} VM(s) in total.");
+
+        if ($requestedForceReap && ! $hasErrors) {
+            $settings->set(SettingsRepository::FORCE_REAP_ALL_REQUESTED, '0');
+        }
 
         if (! $all) {
             $this->call('runners:warm-pools');

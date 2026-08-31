@@ -12,6 +12,9 @@ class SettingsRepository
     /** Feature toggles that default to on when no row has been written yet. */
     public const REAPING_ENABLED = 'reaping_enabled';
 
+    /** One-shot request consumed by the next scheduled reaper pass. */
+    public const FORCE_REAP_ALL_REQUESTED = 'force_reap_all_requested';
+
     public const AUTO_SPAWN_ENABLED = 'auto_spawn_enabled';
 
     /** 'auto' deletes a superseded template as soon as nothing clones from it. */

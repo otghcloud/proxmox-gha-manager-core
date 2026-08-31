@@ -78,10 +78,10 @@
 							<div class="me-3">
 								<strong>Reap all managed VMs</strong>
 								<div class="text-secondary small">
-									Destroys all {{ $liveRunnerCount }} tracked runner VM(s) now, whatever state they are in.
+									The next scheduled reaper pass destroys all {{ $liveRunnerCount }} tracked runner VM(s), whatever state they are in.
 								</div>
 							</div>
-							<form action="{{ route('debug.reap-all') }}" method="POST" onsubmit="return confirm('Destroy every managed runner VM now?');">
+							<form action="{{ route('debug.reap-all') }}" method="POST" onsubmit="return confirm('Force-reap every managed runner VM on the next scheduled pass?');">
 								@csrf
 								<button class="btn btn-danger" type="submit">Reap all</button>
 							</form>
