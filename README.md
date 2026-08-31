@@ -1,4 +1,4 @@
-<img src="public/default_logo_dark.png" alt="Proxmox GHA Manager" width="200px" />
+<img src="https://otgh-static-assets.s3.otgh.cloud/branding/logos/otgh_cloud_2024.png" alt="OTGH Cloud" width="200px" />
 
 # Proxmox GHA Manager
 
