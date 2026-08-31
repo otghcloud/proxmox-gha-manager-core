@@ -237,6 +237,7 @@ class ImageBuilder
 
             // Authenticated plugin and tool downloads, which otherwise hit GitHub's anonymous rate limit.
             'PACKER_GITHUB_API_TOKEN' => (string) $account->github_token,
+            'PKR_VAR_github_api_token' => (string) $account->github_token,
             'PACKER_PLUGIN_PATH' => config('builds.packer_plugin_path'),
 
             'HOME' => config('builds.working_directory'),
