@@ -1,0 +1,56 @@
+name: Docker smoke test
+
+on:
+  workflow_dispatch:
+
+permissions:
+  contents: read
+
+jobs:
+  smoke:
+    name: Boot and configure manager
+    runs-on: [self-hosted, ubuntu-latest]
+    steps:
+      - name: Check out code
+        # Build context is the workspace root: the Dockerfile also needs the sibling
+        # proxmox-gha-manager-templates checkout, so this workflow only runs where both
+        # repos are checked out side by side (see the templates consumption contract in
+        # the workspace README).
+        uses: actions/checkout@v7
+        with:
+          submodules: false
+
+      - name: Build manager image
+        uses: docker/build-push-action@v7
+        with:
+          context: .
+          file: docker/Dockerfile
+          load: true
+          tags: proxmox-gha-manager-core:smoke
+
+      - name: Start manager
+        run: |
+          docker volume create proxmox-gha-manager-core-smoke-data
+          docker run -d --name proxmox-gha-manager-core-smoke \
+            --network host \
+            -v proxmox-gha-manager-core-smoke-data:/data \
+            -e APP_URL=http://127.0.0.1:8080 \
+            -e TRUSTED_PROXIES='*' \
+            proxmox-gha-manager-core:smoke
+
+      - name: Check health endpoint
+        run: |
+          for attempt in $(seq 1 30); do
+            curl --fail --silent http://127.0.0.1:8080/healthz && exit 0
+            sleep 2
+          done
+          docker logs proxmox-gha-manager-core-smoke
+          exit 1
+
+      - name: Show manager logs
+        if: always()
+        run: docker logs proxmox-gha-manager-core-smoke
+
+      - name: Clean up
+        if: always()
+        run: docker rm -f proxmox-gha-manager-core-smoke || true

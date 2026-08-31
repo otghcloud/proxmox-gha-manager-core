@@ -1,0 +1,32 @@
+.table-responsive-datatable {
+    table.dataTable,
+    table.table {
+        margin-bottom: 0;
+    }
+}
+
+.dt-container {
+    .dt-layout-row {
+        margin: 0;
+    }
+
+    .dt-search,
+    .dt-length {
+        display: none;
+    }
+}
+
+table.dataTable {
+    margin: 0 !important;
+    width: 100% !important;
+}
+
+.datatable-card-footer {
+    .datatable-footer-layout {
+        margin-top: 0;
+    }
+
+    &:empty {
+        display: none;
+    }
+}

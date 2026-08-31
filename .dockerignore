@@ -1,0 +1,16 @@
+vendor
+node_modules
+.env
+.env.backup
+storage/logs/*
+storage/framework/cache/*
+storage/framework/sessions/*
+storage/framework/views/*
+database/database.sqlite
+
+# Regenerated at boot by package:discover; a stale copy references dev-only providers.
+bootstrap/cache/*.php
+
+public/build
+public/hot
+PLAN.md

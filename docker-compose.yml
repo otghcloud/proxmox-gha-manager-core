@@ -1,0 +1,18 @@
+services:
+  proxmox-gha-manager-core:
+    image: ghcr.io/otghcloud/proxmox-gha-manager-core/proxmox-gha-manager-core:latest
+    # Swap the image line for this to build from a local checkout.
+    #build:
+    #  context: .
+    #  dockerfile: docker/Dockerfile
+    container_name: proxmox-gha-manager-core
+    restart: unless-stopped
+    # The controller must reach the Proxmox API
+    network_mode: host
+    environment:
+      APP_URL: https://runners.example.com
+    volumes:
+      - proxmox-gha-manager-core-data:/data
+
+volumes:
+  proxmox-gha-manager-core-data:

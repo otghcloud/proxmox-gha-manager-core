@@ -1,0 +1,225 @@
+name: Release (shared)
+
+# Reusable version/tag/release logic, ported from github-actions-proxmox-monorepo. Called with a
+# Each repository has independent plain semantic version tags: v0.1.0, v1.2.3, etc.
+
+on:
+  workflow_call:
+    inputs:
+      tag_prefix:
+        description: Tag prefix for this subproject, including the trailing "v".
+        required: true
+        type: string
+      bump_override:
+        description: Force a specific semantic version bump.
+        required: false
+        default: auto
+        type: string
+    outputs:
+      skip:
+        value: ${{ jobs.bump.outputs.skip }}
+      version:
+        value: ${{ jobs.bump.outputs.version }}
+      release_sha:
+        value: ${{ jobs.bump.outputs.release_sha }}
+      pr_title:
+        value: ${{ jobs.bump.outputs.pr_title }}
+      released:
+        value: ${{ jobs.release.outputs.released }}
+
+permissions:
+  contents: read
+
+jobs:
+  bump:
+    name: Bump version
+    runs-on: [self-hosted, ubuntu-slim]
+    outputs:
+      skip: ${{ steps.skip_check.outputs.skip }}
+      version: ${{ steps.next_version.outputs.version }}
+      release_sha: ${{ steps.capture_sha.outputs.sha }}
+      pr_title: ${{ fromJson(steps.pr_info.outputs.result).title }}
+      pr_body: ${{ fromJson(steps.pr_info.outputs.result).body }}
+    steps:
+      - name: Checkout code
+        uses: actions/checkout@v7
+        with:
+          fetch-depth: 0
+          submodules: false
+
+      - name: Check for skip marker
+        id: skip_check
+        shell: bash
+        run: |
+          set -euo pipefail
+
+          COMMIT_MESSAGE=$(git log -1 --pretty=%B)
+          if echo "${COMMIT_MESSAGE}" | grep -q '\[skip-release\]'; then
+            echo "skip=true" >> "$GITHUB_OUTPUT"
+            echo "Skipping workflow due to [skip-release] marker"
+          else
+            echo "skip=false" >> "$GITHUB_OUTPUT"
+          fi
+
+      - name: Set up Git
+        if: steps.skip_check.outputs.skip == 'false'
+        shell: bash
+        run: |
+          set -euo pipefail
+          git config user.name "GitHub Actions"
+          git config user.email "actions@github.com"
+
+      - name: Get PR information
+        id: pr_info
+        if: steps.skip_check.outputs.skip == 'false'
+        uses: actions/github-script@v9
+        with:
+          script: |
+            if (context.eventName === 'workflow_dispatch') {
+              return {
+                title: 'Manual release',
+                body: 'Manual release triggered from workflow_dispatch.',
+                number: null,
+                found: false,
+              };
+            }
+
+            const pr = context.payload.pull_request;
+            return {
+              title: pr.title,
+              body: pr.body || 'No description provided.',
+              number: pr.number,
+              found: true,
+            };
+
+      - name: Fetch latest main
+        if: steps.skip_check.outputs.skip == 'false' && github.event_name != 'workflow_dispatch'
+        shell: bash
+        run: |
+          set -euo pipefail
+          git fetch origin main --tags
+
+      - name: Calculate next version
+        id: next_version
+        if: steps.skip_check.outputs.skip == 'false'
+        env:
+          TAG_PREFIX: ${{ inputs.tag_prefix }}
+          BUMP_OVERRIDE: ${{ inputs.bump_override }}
+          PR_TITLE: ${{ fromJson(steps.pr_info.outputs.result).title }}
+          PR_BODY: ${{ fromJson(steps.pr_info.outputs.result).body }}
+        shell: bash
+        run: |
+          set -euo pipefail
+
+          LAST_TAG=$(git tag --list "${TAG_PREFIX}[0-9]*.[0-9]*.[0-9]*" --sort=-version:refname | head -n1)
+          if [[ -z "${LAST_TAG}" ]]; then
+            LAST_TAG="${TAG_PREFIX}0.0.0"
+          fi
+
+          VERSION_NO_V=${LAST_TAG#"${TAG_PREFIX}"}
+          MAJOR=${VERSION_NO_V%%.*}
+          REST=${VERSION_NO_V#*.}
+          MINOR=${REST%%.*}
+          PATCH=${REST#*.}
+
+          if ! echo "${MAJOR}" | grep -Eq '^[0-9]+$' || ! echo "${MINOR}" | grep -Eq '^[0-9]+$' || ! echo "${PATCH}" | grep -Eq '^[0-9]+$'; then
+            echo "Invalid semver tag parsed from ${LAST_TAG}"
+            exit 1
+          fi
+
+          if [[ "${BUMP_OVERRIDE}" != "auto" && -n "${BUMP_OVERRIDE}" ]]; then
+            BUMP="${BUMP_OVERRIDE}"
+          elif printf '%s\n%s\n' "${PR_TITLE}" "${PR_BODY}" | grep -q 'BREAKING CHANGE' || [[ "${PR_TITLE}" =~ ^[a-z]+(\([a-z0-9._/-]+\))?!: ]]; then
+            BUMP="major"
+          elif [[ "${PR_TITLE}" =~ ^feat(\([a-z0-9._/-]+\))?(!)?: ]]; then
+            BUMP="minor"
+          else
+            BUMP="patch"
+          fi
+
+          case "${BUMP}" in
+            major)
+              MAJOR=$((MAJOR + 1))
+              MINOR=0
+              PATCH=0
+              ;;
+            minor)
+              MINOR=$((MINOR + 1))
+              PATCH=0
+              ;;
+            *)
+              PATCH=$((PATCH + 1))
+              ;;
+          esac
+
+          NEXT_VERSION="${MAJOR}.${MINOR}.${PATCH}"
+          echo "version=${NEXT_VERSION}" >> "$GITHUB_OUTPUT"
+
+      - name: Capture release SHA
+        id: capture_sha
+        if: steps.skip_check.outputs.skip == 'false'
+        shell: bash
+        run: |
+          set -euo pipefail
+          if [[ "${{ github.event_name }}" == "workflow_dispatch" ]]; then
+            echo "sha=$(git rev-parse HEAD)" >> "$GITHUB_OUTPUT"
+          elif [[ -n "${{ github.event.pull_request.merge_commit_sha }}" ]]; then
+            echo "sha=${{ github.event.pull_request.merge_commit_sha }}" >> "$GITHUB_OUTPUT"
+          else
+            echo "sha=$(git rev-parse HEAD)" >> "$GITHUB_OUTPUT"
+          fi
+
+  release:
+    name: Tag and release
+    needs:
+      - bump
+    if: needs.bump.outputs.skip == 'false'
+    runs-on: [self-hosted, ubuntu-slim]
+    permissions:
+      contents: write
+    outputs:
+      released: ${{ steps.push_tag.outputs.released }}
+    steps:
+      - name: Checkout release SHA
+        uses: actions/checkout@v7
+        with:
+          ref: ${{ needs.bump.outputs.release_sha }}
+          fetch-depth: 0
+          submodules: false
+
+      - name: Set up Git
+        shell: bash
+        run: |
+          set -euo pipefail
+          git config user.name "GitHub Actions"
+          git config user.email "actions@github.com"
+
+      - name: Create and push version tag
+        id: push_tag
+        env:
+          TAG_PREFIX: ${{ inputs.tag_prefix }}
+          NEW_VERSION: ${{ needs.bump.outputs.version }}
+          PR_TITLE: ${{ needs.bump.outputs.pr_title }}
+        shell: bash
+        run: |
+          set -euo pipefail
+
+          TAG="${TAG_PREFIX}${NEW_VERSION}"
+
+          if git rev-parse -q --verify "refs/tags/${TAG}" >/dev/null; then
+            echo "Tag ${TAG} already exists."
+            echo "released=false" >> "$GITHUB_OUTPUT"
+            exit 0
+          fi
+
+          git tag -a "${TAG}" -m "${TAG} - ${PR_TITLE}"
+          git push origin "${TAG}"
+          echo "released=true" >> "$GITHUB_OUTPUT"
+
+      - name: Create GitHub release
+        if: steps.push_tag.outputs.released == 'true'
+        uses: softprops/action-gh-release@v3
+        with:
+          tag_name: ${{ inputs.tag_prefix }}${{ needs.bump.outputs.version }}
+          name: ${{ inputs.tag_prefix }}${{ needs.bump.outputs.version }} - ${{ needs.bump.outputs.pr_title }}
+          generate_release_notes: true
