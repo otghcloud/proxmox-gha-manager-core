@@ -36,7 +36,7 @@ ENV PHP_VERSION=${PHP}
 
 RUN apt-get update \
     && apt-get install -y --no-install-recommends \
-        ca-certificates curl unzip tzdata git whois gettext-base tini \
+        ca-certificates curl unzip tzdata git tini \
         nginx supervisor redis-server sqlite3 \
         "php${PHP}-fpm" "php${PHP}-cli" "php${PHP}-sqlite3" "php${PHP}-mbstring" \
         "php${PHP}-xml" "php${PHP}-curl" "php${PHP}-zip" "php${PHP}-intl" \
@@ -62,6 +62,11 @@ RUN git init -q /opt/image-builder \
     && git -C /opt/image-builder checkout -q FETCH_HEAD \
     && rm -rf /opt/image-builder/.git
 
+# Pre-installed so the first build does not fetch the plugin from GitHub unauthenticated.
+ENV PACKER_PLUGIN_PATH=/opt/packer-plugins
+RUN mkdir -p "${PACKER_PLUGIN_PATH}" \
+    && packer plugins install github.com/hashicorp/proxmox
+
 COPY docker/nginx/default.conf /etc/nginx/conf.d/default.conf
 COPY docker/php/php.ini /etc/php/${PHP}/fpm/conf.d/99-proxmox-manager.ini
 COPY docker/php/www.conf /etc/php/${PHP}/fpm/pool.d/www.conf
@@ -72,13 +77,14 @@ COPY docker/entrypoint.sh /usr/local/bin/entrypoint.sh
 RUN chmod +x /usr/local/bin/entrypoint.sh \
     && useradd --system --uid 10001 --home /app --shell /usr/sbin/nologin manager \
     && mkdir -p /run/php /data \
-    && chown -R manager:manager /app/storage /app/bootstrap/cache /data /opt/image-builder
+    && chown -R manager:manager /app/storage /app/bootstrap/cache /data /opt/image-builder /opt/packer-plugins
 
 ENV IMAGE_BUILDER_PATH=/opt/image-builder \
     BUILD_LOG_DIRECTORY=/data/builds \
-    PACKER_PLUGIN_PATH=/data/packer-plugins
+    BUILD_WORKING_DIRECTORY=/data \
+    RUNNER_IMAGES_PATH=/data/runner-images
 
-# Holds the SQLite database, the generated APP_KEY, build logs and the Packer plugin cache.
+# Holds the SQLite database, the generated APP_KEY, build logs and any fetched runner-images trees.
 VOLUME ["/data"]
 
 EXPOSE 8080

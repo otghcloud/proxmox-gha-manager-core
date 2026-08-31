@@ -44,7 +44,7 @@ Build directly from this repository root:
 docker build -t proxmox-gha-manager-core -f docker/Dockerfile .
 ```
 
-The container automatically clones the required builder and template dependencies into `/opt/image-builder` and runs Nginx, PHP-FPM, Redis, queue workers, build workers, and the scheduler under Supervisor.
+The image bundles the published [proxmox-gha-manager-templates](https://github.com/otghcloud/proxmox-gha-manager-templates) catalog at `/opt/image-builder`, pinned by the `TEMPLATES_REF` build argument, and runs Nginx, PHP-FPM, Redis, queue workers, build workers, and the scheduler under Supervisor. Builds invoke Packer directly against those templates; no external build script is required.
 
 ## Command line
 

@@ -9,7 +9,8 @@ permissions:
 jobs:
   smoke:
     name: Boot and configure manager
-    runs-on: [self-hosted, ubuntu-latest]
+    # Reinstate the self-hosted label once the runner fleet is healthy again.
+    runs-on: ubuntu-latest
     steps:
       - name: Check out code
         uses: actions/checkout@v7

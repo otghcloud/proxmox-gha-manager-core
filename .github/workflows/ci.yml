@@ -16,7 +16,8 @@ permissions:
 jobs:
   lint-and-test:
     name: lint:test
-    runs-on: [self-hosted, ubuntu-latest]
+    # Reinstate the self-hosted label once the runner fleet is healthy again.
+    runs-on: ubuntu-latest
     steps:
       - uses: actions/checkout@v7
         with:
@@ -46,7 +47,7 @@ jobs:
 
   build-assets:
     name: build:assets
-    runs-on: [self-hosted, ubuntu-latest]
+    runs-on: ubuntu-latest
     steps:
       - uses: actions/checkout@v7
         with:

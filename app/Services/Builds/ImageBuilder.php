@@ -7,13 +7,17 @@ use App\Enums\BuildTarget;
 use App\Exceptions\ProvisioningException;
 use App\Models\ImageBuild;
 use App\Models\RunnerTemplate;
+use App\Services\Builds\Packer\RunnerImagesLocator;
+use App\Services\Builds\Packer\TemplateCatalog;
+use App\Services\Builds\Packer\UserDataRenderer;
 use App\Services\Proxmox\ProxmoxClient;
 use Illuminate\Support\Facades\DB;
 use Illuminate\Support\Facades\Log;
 use Symfony\Component\Process\Process;
 
 /**
- * Runs image-builder's `scripts/build.sh` for a Proxmox target.
+ * Builds a Proxmox runner image with Packer, from the templates published by
+ * proxmox-gha-manager-templates.
  *
  * The build itself executes on the Proxmox host over its API, so this only needs the Packer
  * binary; there is no QEMU or KVM involvement here.
@@ -26,6 +30,9 @@ class ImageBuilder
     public function __construct(
         private readonly ProxmoxClient $proxmox,
         private readonly TemplateRebuilder $rebuilder = new TemplateRebuilder,
+        private readonly TemplateCatalog $catalog = new TemplateCatalog,
+        private readonly UserDataRenderer $userData = new UserDataRenderer,
+        private readonly RunnerImagesLocator $runnerImages = new RunnerImagesLocator,
     ) {}
 
     public function run(ImageBuild $build): void
@@ -39,6 +46,11 @@ class ImageBuilder
         }
 
         $logPath = $this->logPath($build);
+        $templateDirectory = $this->catalog->templateDirectory($target);
+
+        if ($templateDirectory === null) {
+            throw new ProvisioningException('No installed template matches the build target '.$target->value.'.');
+        }
 
         DB::transaction(function () use ($build, $logPath) {
             $build->forceFill([
@@ -48,23 +60,15 @@ class ImageBuilder
             ])->save();
         });
 
-        $process = new Process(
-            [$this->scriptPath(), $target->value],
-            $this->workingDirectory(),
-            $this->environmentVariables($build),
-            null,
-            self::TIMEOUT_SECONDS,
+        $account = $build->environment->githubAccount;
+
+        $this->userData->render(
+            $templateDirectory,
+            (string) $account->linux_ssh_username,
+            (string) $account->linux_ssh_password,
         );
 
-        $handle = fopen($logPath, 'w');
-
-        try {
-            $process->run(function (string $type, string $chunk) use ($handle): void {
-                fwrite($handle, $chunk);
-            });
-        } finally {
-            fclose($handle);
-        }
+        $process = $this->runPacker($templateDirectory, $this->environmentVariables($build), $logPath);
 
         DB::transaction(function () use ($build, $process, $template, $target) {
             $build->forceFill([
@@ -96,6 +100,49 @@ class ImageBuilder
         });
 
         $this->rebuilder->advanceBatch($build->refresh());
+    }
+
+    /**
+     * Runs `packer init`, `validate` and `build` in turn, stopping at the first failure.
+     *
+     * @param  array<string, string>  $environment
+     */
+    private function runPacker(string $templateDirectory, array $environment, string $logPath): Process
+    {
+        $packer = (string) config('builds.packer_binary');
+        $handle = fopen($logPath, 'w');
+
+        if ($handle === false) {
+            throw new ProvisioningException('The build log could not be opened: '.$logPath);
+        }
+
+        try {
+            $process = null;
+
+            foreach (['init', 'validate', 'build'] as $command) {
+                fwrite($handle, sprintf("==> packer %s\n", $command));
+
+                $process = new Process(
+                    [$packer, $command, '.'],
+                    $templateDirectory,
+                    $environment,
+                    null,
+                    self::TIMEOUT_SECONDS,
+                );
+
+                $process->run(function (string $type, string $chunk) use ($handle): void {
+                    fwrite($handle, $chunk);
+                });
+
+                if (! $process->isSuccessful()) {
+                    break;
+                }
+            }
+
+            return $process;
+        } finally {
+            fclose($handle);
+        }
     }
 
     /**
@@ -193,6 +240,12 @@ class ImageBuilder
             }
         }
 
+        $scriptsRoot = $this->runnerImages->scriptsRoot($target);
+
+        if ($scriptsRoot !== null) {
+            $variables[$target->scriptsRootVariable()] = $scriptsRoot;
+        }
+
         return $variables;
     }
 
@@ -207,16 +260,6 @@ class ImageBuilder
         return $directory.'/build-'.$build->id.'.log';
     }
 
-    private function scriptPath(): string
-    {
-        return rtrim(config('builds.image_builder_path'), '/').'/scripts/build.sh';
-    }
-
-    private function workingDirectory(): string
-    {
-        return rtrim(config('builds.image_builder_path'), '/');
-    }
-
     public static function isAvailable(): bool
     {
         if (app()->environment('testing')) {
@@ -225,10 +268,6 @@ class ImageBuilder
 
         $path = rtrim(config('builds.image_builder_path'), '/');
 
-        return is_dir($path) && (
-            is_executable($path.'/scripts/build.sh') ||
-            file_exists($path.'/scripts/build.sh') ||
-            file_exists($path.'/templates.json')
-        );
+        return is_dir($path) && is_file($path.'/templates.json');
     }
 }

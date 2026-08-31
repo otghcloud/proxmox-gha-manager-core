@@ -145,7 +145,7 @@ class RunnerTemplateController extends Controller
         }
 
         if (! ImageBuilder::isAvailable()) {
-            return back()->with('error', 'The image-builder scripts are not present in this installation.');
+            return back()->with('error', 'The image builder templates are not present in this installation.');
         }
 
         $misconfigured = $targets->first(fn (ProxmoxTarget $node): bool => $node->build_iso_storage === null || $node->build_vm_storage === null);

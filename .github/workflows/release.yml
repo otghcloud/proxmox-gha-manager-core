@@ -51,7 +51,8 @@ jobs:
     needs:
       - version
     if: needs.version.outputs.released == 'true'
-    runs-on: [self-hosted, ubuntu-latest]
+    # Reinstate the self-hosted label once the runner fleet is healthy again.
+    runs-on: ubuntu-latest
     permissions:
       contents: read
       packages: write
@@ -89,7 +90,7 @@ jobs:
 
   all-checks-passed:
     name: Release core / All checks passed
-    runs-on: [self-hosted, ubuntu-slim]
+    runs-on: ubuntu-slim
     permissions: {}
     needs:
       - version

@@ -175,10 +175,15 @@ class BuildProgress
 
     private function metadataPath(string $templateJson): string
     {
-        if (str_starts_with($templateJson, 'image-builder/')) {
-            return rtrim(config('builds.image_builder_path'), '/').'/'.substr($templateJson, strlen('image-builder/'));
+        if (str_starts_with($templateJson, '/')) {
+            return $templateJson;
         }
 
-        return dirname(base_path()).'/'.$templateJson;
+        // Catalogs published before the repository split prefixed paths with the checkout directory.
+        if (str_starts_with($templateJson, 'image-builder/')) {
+            $templateJson = substr($templateJson, strlen('image-builder/'));
+        }
+
+        return rtrim(config('builds.image_builder_path'), '/').'/'.$templateJson;
     }
 }
