@@ -31,6 +31,8 @@ ARG PACKER_VERSION=1.16.0
 ARG DEBIAN_FRONTEND=noninteractive
 # Branch, tag or commit of proxmox-gha-manager-templates to bundle into the image.
 ARG TEMPLATES_REF=main
+# Released version to stamp into the image; local builds leave it unset and report dev-main.
+ARG APP_VERSION=
 
 ENV PHP_VERSION=${PHP}
 
@@ -54,6 +56,9 @@ WORKDIR /app
 
 COPY --from=vendor /build /app
 COPY --from=assets /build/public/build /app/public/build
+
+# app_version() reads this file, falling back to config when it is absent.
+RUN if [ -n "${APP_VERSION}" ]; then printf '%s\n' "${APP_VERSION}" > /app/RELEASE; fi
 
 # Fetch by ref rather than clone so branches, tags and commit SHAs all work.
 RUN git init -q /opt/image-builder \

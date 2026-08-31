@@ -84,6 +84,7 @@ jobs:
           push: true
           build-args: |
             TEMPLATES_REF=${{ inputs.templates_ref || 'main' }}
+            APP_VERSION=v${{ needs.version.outputs.version }}
           tags: |
             ${{ env.IMAGE }}:v${{ needs.version.outputs.version }}
             ${{ env.IMAGE }}:latest
