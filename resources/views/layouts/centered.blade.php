@@ -16,7 +16,7 @@
 
 				<div class="text-center mb-4">
 					<a href="{{ url('/') }}">
-						<img src="https://otgh-static-assets.s3.otgh.cloud/branding/logos/otgh_cloud_2024.png" width="180" alt="OTGH Cloud" />
+						<img src="{{ asset('default_logo_dark.png') }}" width="180" alt="OTGH Cloud" />
 					</a>
 				</div>
 

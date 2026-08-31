@@ -6,7 +6,7 @@
 
 		<div class="navbar-brand navbar-brand-autodark d-none-navbar-horizontal pe-0 pe-md-3" data-bs-theme="dark">
 			<a aria-label="OTGH Cloud" href="{{ route('dashboard') }}">
-				<img src="https://static.otgh.cloud/images/branding/otgh_cloud_logo_2026_white.png" width="100" alt="OTGH Cloud" />
+				<img src="{{ asset('default_logo.png') }}" width="100" alt="OTGH Cloud" />
 			</a>
 		</div>
 
