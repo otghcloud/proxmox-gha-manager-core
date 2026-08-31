@@ -1,33 +1,22 @@
-<img src="https://otgh-static-assets.s3.otgh.cloud/branding/logos/otgh_cloud_2024.png" alt="OTGH Cloud" width="200px" />
+<img src="public/default_logo_dark.png" alt="Proxmox GHA Manager" width="200px" />
 
-# Proxmox Manager
+# Proxmox GHA Manager
 
 Ephemeral, just-in-time GitHub Actions runners backed by Proxmox VE, with a web interface.
-
-This repository is the core runtime for the new proxmox-gha-manager split. It is the canonical orchestration application and is intended to replace the legacy monorepo-based manager.
-
-## Current capabilities
-
-| Capability | Manager |
-| --- | --- |
-| Configuration | A database, edited in the browser |
-| Scope | GitHub organisations with multiple Proxmox targets |
-| History | Every runner and transition retained |
 
 ## Getting Started
 
 ```bash
-docker run -d --name proxmox-manager \
+docker run -d --name proxmox-gha-manager-core \
   --restart=always \
   --network host \
-  -v proxmox-manager-data:/data \
+  -v proxmox-gha-manager-core-data:/data \
   -e APP_URL=https://runners.example.com \
   -e TRUSTED_PROXIES='*' \
-  ghcr.io/otghcloud/github-actions-proxmox/proxmox-manager:latest
+  ghcr.io/otghcloud/proxmox-gha-manager-core/proxmox-gha-manager-core:latest
 ```
 
-Open the address in a browser and the setup wizard takes over: requirements check, external
-URL, timezone and an administrator account.
+Open the address in a browser and the setup wizard will guide you through the rest of the setup and configuration.
 
 > [!IMPORTANT]
 > The `/data` volume holds the SQLite database **and** the generated `APP_KEY` that encrypts
@@ -38,28 +27,24 @@ URL, timezone and an administrator account.
 ```bash
 composer install
 npm install && npm run build
+cp .env.example .env
+php artisan key:generate
 touch database/database.sqlite
 php artisan migrate
 php artisan serve
 ```
 
-Checks: `./vendor/bin/pint --test` and `php artisan test`.
+Checks: `./vendor/bin/pint --test` and `vendor/bin/phpunit`.
 
 ## Building the image
 
-The build context is the **repository root**, because the image bundles the Proxmox Packer
-templates and the extracted template artifacts from the sibling templates repo:
+Build directly from this repository root:
 
 ```bash
-cd ..
-# ensure the split template repo is available adjacent to this repo
-#   ../proxmox-gha-manager-templates
-
-docker build -f proxmox-gha-manager-core/docker/Dockerfile -t proxmox-gha-manager-core .
+docker build -t proxmox-gha-manager-core -f docker/Dockerfile .
 ```
 
-The container runs nginx, PHP-FPM, Redis, four provisioning queue workers, two concurrent build
-workers and the scheduler under Supervisor.
+The container automatically clones the required builder and template dependencies into `/opt/image-builder` and runs Nginx, PHP-FPM, Redis, queue workers, build workers, and the scheduler under Supervisor.
 
 ## Command line
 
@@ -74,15 +59,6 @@ Every command accepts `--environment=<slug>`.
 | `runners:reap` | Run one reconciliation and destruction pass |
 | `runners:reconcile` | Re-sync against Proxmox without destroying anything |
 
-## Documentation
-
-Full documentation is on the
-[documentation website](https://otghcloud.github.io/github-actions-proxmox/proxmox-manager/),
-with raw sources in [`docs/proxmox-manager/`](../docs/proxmox-manager/).
-
-The recommended setup order is documented in [Setup Workflow](../docs/proxmox-manager/setup-workflow.md),
-and backup guidance is in [Backup and Restore](../docs/proxmox-manager/backup-restore.md).
-
 ## Contributing, License and Security
 
-See the repository root: [CONTRIBUTING.md](../CONTRIBUTING.md), [LICENSE.md](../LICENSE.md), [SECURITY.md](../SECURITY.md).
+See: [CONTRIBUTING.md](CONTRIBUTING.md), [LICENSE.md](LICENSE.md), [SECURITY.md](SECURITY.md).
