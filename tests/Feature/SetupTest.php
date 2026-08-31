@@ -5,6 +5,7 @@ namespace Tests\Feature;
 use App\Providers\AppServiceProvider;
 use App\Services\SettingsRepository;
 use Illuminate\Foundation\Testing\RefreshDatabase;
+use Illuminate\Http\UploadedFile;
 use Tests\TestCase;
 
 class SetupTest extends TestCase
@@ -45,12 +46,12 @@ class SetupTest extends TestCase
     public function test_importing_configuration_zip_restores_backup(): void
     {
         $zipPath = tempnam(sys_get_temp_dir(), 'test_zip_').'.zip';
-        $zip = new \ZipArchive();
+        $zip = new \ZipArchive;
         $zip->open($zipPath, \ZipArchive::CREATE | \ZipArchive::OVERWRITE);
         $zip->addFromString('.env', 'APP_NAME="Imported Test"');
         $zip->close();
 
-        $file = new \Illuminate\Http\UploadedFile($zipPath, 'backup.zip', 'application/zip', null, true);
+        $file = new UploadedFile($zipPath, 'backup.zip', 'application/zip', null, true);
 
         $response = $this->post(route('setup.import'), [
             'config_file' => $file,

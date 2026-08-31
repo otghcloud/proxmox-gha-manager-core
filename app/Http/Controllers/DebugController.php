@@ -98,7 +98,7 @@ class DebugController extends Controller
         $zipFilename = 'proxmox-gha-manager-export-'.date('YmdHis').'.zip';
         $tempZipPath = tempnam(sys_get_temp_dir(), 'cfg_export_').'.zip';
 
-        $zip = new ZipArchive();
+        $zip = new ZipArchive;
         if ($zip->open($tempZipPath, ZipArchive::CREATE | ZipArchive::OVERWRITE) !== true) {
             abort(500, 'Failed to create configuration zip archive.');
         }

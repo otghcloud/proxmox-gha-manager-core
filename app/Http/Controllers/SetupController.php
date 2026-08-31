@@ -65,7 +65,7 @@ class SetupController extends Controller
             return back()->with('error', 'Please upload a valid backup zip file.');
         }
 
-        $zip = new ZipArchive();
+        $zip = new ZipArchive;
         $res = $zip->open($file->getRealPath());
 
         if ($res !== true) {
