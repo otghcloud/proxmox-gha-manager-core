@@ -140,7 +140,7 @@
 						</div>
 						<div class="card-footer text-secondary small">
 							These are removed automatically once nothing is cloned from them, subject to the retention
-							setting on the <a href="{{ route('settings.index') }}">settings page</a>.
+							setting on the <a href="{{ route('settings.templates.index') }}">settings page</a>.
 						</div>
 					@endif
 				</div>

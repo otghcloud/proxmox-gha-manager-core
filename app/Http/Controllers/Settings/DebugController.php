@@ -1,12 +1,15 @@
 <?php
 
-namespace App\Http\Controllers;
+namespace App\Http\Controllers\Settings;
 
 use App\Enums\RunnerState;
+use App\Http\Controllers\Controller;
 use App\Models\ImageBuild;
 use App\Models\Pool;
 use App\Models\Runner;
 use App\Models\RunnerEvent;
+use App\Models\WebhookDelivery;
+use App\Models\WorkflowJob;
 use App\Services\SettingsRepository;
 use Illuminate\Http\RedirectResponse;
 use Illuminate\Http\Request;
@@ -24,12 +27,14 @@ class DebugController extends Controller
 
     public function index(): View
     {
-        return view('pages.debug.index', [
+        return view('pages.settings.debug', [
             'reapingEnabled' => $this->settings->bool(SettingsRepository::REAPING_ENABLED),
             'autoSpawnEnabled' => $this->settings->bool(SettingsRepository::AUTO_SPAWN_ENABLED),
             'liveRunnerCount' => Runner::query()->whereNotIn('state', $this->historicStateValues())->count(),
             'historicRunnerCount' => Runner::query()->whereIn('state', $this->historicStateValues())->count(),
             'buildCount' => ImageBuild::query()->count(),
+            'webhookDeliveryCount' => WebhookDelivery::query()->count(),
+            'workflowJobCount' => WorkflowJob::query()->count(),
             'pools' => Pool::with(['environment', 'proxmoxTargets'])->orderBy('name')->get(),
         ]);
     }
@@ -84,6 +89,31 @@ class DebugController extends Controller
         }
 
         return back()->with('success', "Deleted {$deleted} build record(s).");
+    }
+
+    public function purgeWebhookLogs(): RedirectResponse
+    {
+        $deleted = WebhookDelivery::query()->delete();
+
+        return back()->with('success', "Deleted {$deleted} webhook delivery log(s).");
+    }
+
+    /**
+     * Removes every workflow job record, including their stored logs. Runners keep their history.
+     */
+    public function purgeWorkflowJobs(): RedirectResponse
+    {
+        $logPaths = WorkflowJob::query()->whereNotNull('log_path')->pluck('log_path');
+
+        $deleted = WorkflowJob::query()->delete();
+
+        foreach ($logPaths as $path) {
+            if (is_file($path)) {
+                @unlink($path);
+            }
+        }
+
+        return back()->with('success', "Deleted {$deleted} GitHub job record(s).");
     }
 
     /**

@@ -19,9 +19,7 @@ on:
           - minor
           - major
       templates_ref:
-        description: >-
-          Tag/ref of proxmox-gha-manager-templates to bundle into this release
-          (see the templates consumption contract in the workspace README).
+        description: Tag/ref of proxmox-gha-manager-templates to bundle into this release
         required: true
         default: main
         type: string
@@ -51,8 +49,7 @@ jobs:
     needs:
       - version
     if: needs.version.outputs.released == 'true'
-    # Reinstate the self-hosted label once the runner fleet is healthy again.
-    runs-on: ubuntu-latest
+    runs-on: ['self-hosted', 'ubuntu-latest']
     permissions:
       contents: read
       packages: write
@@ -91,7 +88,7 @@ jobs:
 
   all-checks-passed:
     name: Release core / All checks passed
-    runs-on: ubuntu-slim
+    runs-on: ['self-hosted', 'ubuntu-slim']
     permissions: {}
     needs:
       - version
