@@ -24,7 +24,7 @@ class TargetSelector
      * Every target that could host this request, emptiest first.
      *
      * When a pool is given, only the nodes it is configured to run on are eligible and they are
-     * ordered by the headroom left in that pool's per-node limit, so spawns spread across nodes.
+     * ordered by ascending pool preference, then the headroom left in that node's limit.
      *
      * @return Collection<int, ProxmoxTarget>
      */
@@ -64,7 +64,10 @@ class TargetSelector
         $pool->loadMissing('proxmoxTargets');
 
         return $targets
-            ->sortByDesc(fn (ProxmoxTarget $target): int => $pool->availableCapacityOn($target))
+            ->sortBy([
+                fn (ProxmoxTarget $target): int => $pool->preferenceFor($target),
+                fn (ProxmoxTarget $target): int => -$pool->availableCapacityOn($target),
+            ])
             ->values();
     }
 }

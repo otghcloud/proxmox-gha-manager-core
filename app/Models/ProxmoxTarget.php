@@ -51,7 +51,7 @@ class ProxmoxTarget extends Model
     public function pools(): BelongsToMany
     {
         return $this->belongsToMany(Pool::class, 'pool_proxmox_target')
-            ->withPivot(['min_idle_runners', 'max_concurrent'])
+            ->withPivot(['preference', 'min_idle_runners', 'max_concurrent'])
             ->withTimestamps();
     }
 

@@ -48,7 +48,7 @@ class Pool extends Model
     public function proxmoxTargets(): BelongsToMany
     {
         return $this->belongsToMany(ProxmoxTarget::class, 'pool_proxmox_target')
-            ->withPivot(['min_idle_runners', 'max_concurrent'])
+            ->withPivot(['preference', 'min_idle_runners', 'max_concurrent'])
             ->withTimestamps();
     }
 
@@ -96,6 +96,11 @@ class Pool extends Model
     public function maxConcurrentOn(ProxmoxTarget $target): int
     {
         return (int) ($this->pivotFor($target)?->max_concurrent ?? 0);
+    }
+
+    public function preferenceFor(ProxmoxTarget $target): int
+    {
+        return (int) ($this->pivotFor($target)?->preference ?? 0);
     }
 
     public function activeRunnerCountOn(ProxmoxTarget $target): int

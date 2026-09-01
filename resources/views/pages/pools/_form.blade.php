@@ -87,7 +87,8 @@
 		@else
 			<p class="text-secondary small">
 				Every limit is per node. Tick a node to let this pool run there, then set how many idle runners
-				are kept warm on it and how many may run on it at once. The pool totals are the sum of the rows below.
+				are kept warm on it and how many may run on it at once. Lower preference values are selected first;
+				equal preferences favour the node with more available capacity. The pool totals are the sum of the rows below.
 			</p>
 			@error('nodes')
 				<div class="alert alert-danger">{{ $message }}</div>
@@ -98,6 +99,7 @@
 						<tr>
 							<th style="width: 4rem;">Use</th>
 							<th>Node</th>
+							<th style="width: 10rem;">Preference</th>
 							<th style="width: 12rem;">Min idle (warm pool)</th>
 							<th style="width: 12rem;">Max concurrent</th>
 						</tr>
@@ -114,6 +116,9 @@
 								<td>
 									{{ $target->name }} <span class="text-secondary">({{ $target->proxmox_node }})</span>
 									<span class="badge bg-warning-lt ms-2 d-none" data-unbuilt-warning title="Build this template on the node before runners can spawn there.">No template built here</span>
+								</td>
+								<td>
+									<input class="form-control @error('nodes.'.$target->id.'.preference') is-invalid @enderror" min="0" name="nodes[{{ $target->id }}][preference]" type="number" value="{{ old('nodes.'.$target->id.'.preference', $nodeLimits[$target->id]['preference'] ?? 0) }}">
 								</td>
 								<td>
 									<input
@@ -138,7 +143,7 @@
 					</tbody>
 					<tfoot>
 						<tr>
-							<th class="text-end" colspan="2">Pool total</th>
+							<th class="text-end" colspan="3">Pool total</th>
 							<th data-total-min-idle>0</th>
 							<th data-total-max-concurrent>0</th>
 						</tr>
