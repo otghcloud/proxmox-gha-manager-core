@@ -42,7 +42,7 @@ class BuildsDataTable extends DataTable
             })
             ->filterColumn('environment', fn (QueryBuilder $query, string $keyword) => $query->whereRelation('environment', 'name', 'like', "%{$keyword}%"))
             ->filterColumn('template', fn (QueryBuilder $query, string $keyword) => $query->whereRelation('runnerTemplate', 'name', 'like', "%{$keyword}%"))
-            ->rawColumns(['target', 'status', 'actions'])
+            ->rawColumns(['template_target', 'status', 'actions'])
             ->setRowId('id');
     }
 
