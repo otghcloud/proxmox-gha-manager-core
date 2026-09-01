@@ -38,6 +38,7 @@ class PoolRequest extends FormRequest
             'runner_dir' => ['nullable', 'string', 'max:255'],
             'nodes' => ['array'],
             'nodes.*.enabled' => ['boolean'],
+            'nodes.*.preference' => ['exclude_unless:nodes.*.enabled,true', 'required', 'integer', 'min:0'],
             'nodes.*.min_idle_runners' => ['exclude_unless:nodes.*.enabled,true', 'required', 'integer', 'min:0', 'lte:nodes.*.max_concurrent'],
             'nodes.*.max_concurrent' => ['exclude_unless:nodes.*.enabled,true', 'required', 'integer', 'min:1'],
         ];
@@ -64,6 +65,7 @@ class PoolRequest extends FormRequest
         return collect($this->validated('nodes') ?? [])
             ->filter(fn (array $values): bool => ($values['enabled'] ?? false) === true)
             ->map(fn (array $values): array => [
+                'preference' => (int) $values['preference'],
                 'min_idle_runners' => (int) $values['min_idle_runners'],
                 'max_concurrent' => (int) $values['max_concurrent'],
             ])
@@ -93,6 +95,7 @@ class PoolRequest extends FormRequest
         return collect($nodes)
             ->map(fn ($values): array => [
                 'enabled' => filter_var($values['enabled'] ?? false, FILTER_VALIDATE_BOOLEAN),
+                'preference' => $values['preference'] ?? 0,
                 'min_idle_runners' => $values['min_idle_runners'] ?? null,
                 'max_concurrent' => $values['max_concurrent'] ?? null,
             ])

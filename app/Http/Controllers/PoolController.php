@@ -89,6 +89,7 @@ class PoolController extends Controller
             'targets' => ProxmoxTarget::orderBy('name')->get(),
             'nodeLimits' => $pool->exists
                 ? $pool->proxmoxTargets->keyBy('id')->map(fn (ProxmoxTarget $target): array => [
+                    'preference' => $target->pivot->preference,
                     'min_idle_runners' => $target->pivot->min_idle_runners,
                     'max_concurrent' => $target->pivot->max_concurrent,
                 ])->all()

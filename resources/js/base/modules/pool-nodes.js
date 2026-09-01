@@ -24,6 +24,7 @@ export default function initPoolNodes() {
 
     const fieldsOf = (row) => ({
         toggle: row.querySelector('input[type="checkbox"]'),
+        preference: row.querySelector('input[name$="[preference]"]'),
         minIdle: row.querySelector('input[name$="[min_idle_runners]"]'),
         maxConcurrent: row.querySelector('input[name$="[max_concurrent]"]'),
         warning: row.querySelector('[data-unbuilt-warning]'),
@@ -35,9 +36,10 @@ export default function initPoolNodes() {
         let maxConcurrentSum = 0;
 
         rows.forEach((row) => {
-            const { toggle, minIdle, maxConcurrent, warning } = fieldsOf(row);
+            const { toggle, preference, minIdle, maxConcurrent, warning } = fieldsOf(row);
             const enabled = toggle.checked;
 
+            preference.disabled = !enabled;
             minIdle.disabled = !enabled;
             maxConcurrent.disabled = !enabled;
             row.classList.toggle('opacity-50', !enabled);
