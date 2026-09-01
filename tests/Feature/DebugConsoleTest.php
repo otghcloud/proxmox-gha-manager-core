@@ -144,7 +144,7 @@ class DebugConsoleTest extends TestCase
         ImageBuild::create([
             'environment_id' => $this->environment->id,
             'triggered_by' => $this->user->id,
-            'target' => 'pmx-ubuntu2404',
+            'template_catalog_id' => 'ubuntu-24.04-proxmox-x64',
             'status' => BuildStatus::Running,
             'started_at' => now(),
         ]);

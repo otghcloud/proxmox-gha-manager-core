@@ -22,6 +22,7 @@ class BuildProgressTest extends TestCase
 
         file_put_contents($this->directory.'/templates.json', json_encode([
             'templates' => [[
+                'id' => 'ubuntu-24.04-proxmox-x64',
                 'target' => 'pmx-ubuntu2404',
                 'name' => 'Ubuntu 24.04 Proxmox',
                 'build_requirements' => ['estimated_minutes' => 75],
@@ -56,7 +57,7 @@ class BuildProgressTest extends TestCase
         file_put_contents($log, "first\n[image-builder:stage:prepare] Prepare\n[image-builder:stage:install-tools] Install tools\n");
 
         $progress = (new BuildProgress)->forBuild(new ImageBuild([
-            'target' => 'pmx-ubuntu2404',
+            'template_catalog_id' => 'ubuntu-24.04-proxmox-x64',
             'status' => BuildStatus::Running,
             'log_path' => $log,
         ]));
@@ -77,7 +78,7 @@ class BuildProgressTest extends TestCase
         file_put_contents($log, "[image-builder:stage:prepare] Prepare\n");
 
         $progress = (new BuildProgress)->forBuild(new ImageBuild([
-            'target' => 'pmx-ubuntu2404',
+            'template_catalog_id' => 'ubuntu-24.04-proxmox-x64',
             'status' => BuildStatus::Succeeded,
             'log_path' => $log,
         ]));
@@ -92,7 +93,7 @@ class BuildProgressTest extends TestCase
     public function test_unknown_template_has_no_progress(): void
     {
         $progress = (new BuildProgress)->forBuild(new ImageBuild([
-            'target' => 'pmx-unknown',
+            'template_catalog_id' => 'unknown',
             'status' => BuildStatus::Running,
         ]));
 
@@ -107,6 +108,7 @@ class BuildProgressTest extends TestCase
         // The published catalog carries no build_stages of its own, only a pointer to the template.
         file_put_contents($this->directory.'/templates.json', json_encode([
             'templates' => [[
+                'id' => 'ubuntu-slim-proxmox-x64',
                 'target' => 'pmx-ubuntu-slim',
                 'name' => 'Ubuntu Slim Proxmox',
                 'template_json_path' => 'templates/proxmox/ubuntu/ubuntu-slim/template.json',
@@ -115,7 +117,7 @@ class BuildProgressTest extends TestCase
         ], JSON_THROW_ON_ERROR));
 
         file_put_contents($templateDirectory.'/template.json', json_encode([
-            'target' => 'pmx-ubuntu-slim',
+            'template_catalog_id' => 'ubuntu-slim-proxmox-x64',
             'name' => 'Ubuntu Slim Proxmox',
             'build_requirements' => ['estimated_minutes' => 25],
             'build_stages' => [
@@ -128,7 +130,7 @@ class BuildProgressTest extends TestCase
         file_put_contents($log, "[image-builder:stage:prepare-image-generation] Prepare\n");
 
         $progress = (new BuildProgress)->forBuild(new ImageBuild([
-            'target' => 'pmx-ubuntu-slim',
+            'template_catalog_id' => 'ubuntu-slim-proxmox-x64',
             'status' => BuildStatus::Running,
             'log_path' => $log,
         ]));

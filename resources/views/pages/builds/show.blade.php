@@ -2,7 +2,7 @@
 
 @section('meta-page-title', 'Build '.$build->id)
 @section('page-pretitle', 'Builds')
-@section('page-title', $build->target)
+@section('page-title', $catalogEntry?->name() ?? $build->template_catalog_id)
 
 @section('page-content')
 	<div class="container-xl">

@@ -2,7 +2,6 @@
 
 namespace App\Services\Builds\Packer;
 
-use App\Enums\BuildTarget;
 use App\Exceptions\ProvisioningException;
 use Symfony\Component\Process\Process;
 
@@ -24,13 +23,13 @@ class RunnerImagesLocator
     /**
      * The scripts root to override the template default with, or null when the bundled tree is usable.
      */
-    public function scriptsRoot(BuildTarget $target): ?string
+    public function scriptsRoot(TemplateCatalogEntry $template): ?string
     {
-        if ($target->scriptsRootVariable() === null) {
+        if (! $template->requiresScriptsRoot()) {
             return null;
         }
 
-        if (is_dir($this->bundledPath($target))) {
+        if (is_dir($this->bundledPath($template))) {
             return null;
         }
 
@@ -43,22 +42,22 @@ class RunnerImagesLocator
         }
 
         $checkout = rtrim((string) config('builds.runner_images_path'), '/').'/'.$commit;
-        $scripts = $checkout.'/'.$target->runnerImagesDirectory();
+        $scripts = $checkout.'/'.$template->runnerImagesDirectory();
 
         if (! is_dir($scripts)) {
-            $this->fetch($checkout, $commit, $target->runnerImagesDirectory());
+            $this->fetch($checkout, $commit, $template->runnerImagesDirectory());
         }
 
         if (! is_dir($scripts)) {
-            throw new ProvisioningException('The runner-images checkout is missing '.$target->runnerImagesDirectory().'.');
+            throw new ProvisioningException('The runner-images checkout is missing '.$template->runnerImagesDirectory().'.');
         }
 
         return $scripts;
     }
 
-    private function bundledPath(BuildTarget $target): string
+    private function bundledPath(TemplateCatalogEntry $template): string
     {
-        return $this->catalog->root().'/vendor/runner-images/'.$target->runnerImagesDirectory();
+        return $this->catalog->root().'/vendor/runner-images/'.$template->runnerImagesDirectory();
     }
 
     /**

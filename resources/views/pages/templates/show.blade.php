@@ -40,9 +40,9 @@
 							<dt class="col-5">Environment</dt>
 							<dd class="col-7"><a href="{{ route('environments.show', $template->environment) }}">{{ $template->environment->name }}</a></dd>
 							<dt class="col-5">OS</dt>
-							<dd class="col-7">{{ $template->os->label() }}</dd>
+							<dd class="col-7">{{ $catalogEntry?->platform() ?? 'Unknown' }}</dd>
 							<dt class="col-5">Build target</dt>
-							<dd class="col-7">{{ $template->build_target?->label() ?? 'Built elsewhere' }}</dd>
+							<dd class="col-7">{{ $catalogEntry?->name() ?? 'Catalog entry unavailable' }}</dd>
 						</dl>
 						@if ($template->description)
 							<hr>
@@ -64,8 +64,8 @@
 									@php
 										$isBuilding = isset($buildingTargetIds[$target->id]);
 										$updateService = app(\App\Services\Templates\TemplateUpdateService::class);
-										$version = $target->pivot->version ?? \App\Services\Templates\TemplateUpdateService::getLocalVersionForTarget($template->build_target?->value);
-										$updateVersion = $updateService->getAvailableUpdateVersion($template->build_target?->value, $target->pivot->version);
+										$version = $target->pivot->version ?? \App\Services\Templates\TemplateUpdateService::getLocalVersionForId($template->template_catalog_id);
+										$updateVersion = $updateService->getAvailableUpdateVersion($template->template_catalog_id, $target->pivot->version);
 									@endphp
 									<tr>
 										<td>{{ $target->name }}</td>
@@ -80,7 +80,7 @@
 										</td>
 										<td><span class="badge bg-{{ $isBuilding ? 'blue' : ($target->pivot->availability_status === 'available' ? 'green' : 'secondary') }}-lt">{{ $isBuilding ? 'Building' : ucfirst($target->pivot->availability_status) }}</span></td>
 										<td>{{ $target->pivot->last_built_at?->diffForHumans() ?? 'Never' }}</td>
-										<td class="text-end">@if ($isBuilding)<button class="btn btn-sm" disabled><x-action-content icon="fa-solid fa-spinner" label="Building" /></button>@elseif ($template->build_target && $target->pivot->build_iso_file && $target->build_iso_storage && $target->build_vm_storage)<form action="{{ route('templates.build', [$template, $target]) }}" method="POST">@csrf<button class="btn btn-sm"><x-action-content icon="fa-solid fa-hammer" label="{{ $target->pivot->template_vmid ? 'Rebuild' : 'Build now' }}" /></button></form>@endif</td>
+										<td class="text-end">@if ($isBuilding)<button class="btn btn-sm" disabled><x-action-content icon="fa-solid fa-spinner" label="Building" /></button>@elseif ($catalogEntry?->isBuildEnabled() && $target->pivot->build_iso_file && $target->build_iso_storage && $target->build_vm_storage)<form action="{{ route('templates.build', [$template, $target]) }}" method="POST">@csrf<button class="btn btn-sm"><x-action-content icon="fa-solid fa-hammer" label="{{ $target->pivot->template_vmid ? 'Rebuild' : 'Build now' }}" /></button></form>@endif</td>
 									</tr>
 								@empty
 									<tr><td colspan="6" class="text-secondary">No Proxmox nodes selected.</td></tr>
@@ -158,7 +158,7 @@
 								<tbody>
 									@foreach ($template->imageBuilds as $build)
 										<tr>
-											<td><a href="{{ route('builds.show', $build) }}">{{ $build->target }}</a></td>
+											<td><a href="{{ route('builds.show', $build) }}">{{ $catalogEntry?->name() ?? $build->template_catalog_id }}</a></td>
 											<td>{{ $build->proxmoxTarget?->name ?? '—' }}</td>
 											<td><span class="badge bg-{{ $build->status->colour() }}-lt">{{ $build->status->label() }}</span></td>
 											<td class="text-secondary">{{ $build->started_at?->diffForHumans() ?? '—' }}</td>

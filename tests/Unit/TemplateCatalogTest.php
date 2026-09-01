@@ -2,7 +2,6 @@
 
 namespace Tests\Unit;
 
-use App\Enums\BuildTarget;
 use App\Services\Builds\Packer\TemplateCatalog;
 use Tests\TestCase;
 
@@ -46,19 +45,20 @@ class TemplateCatalogTest extends TestCase
         rmdir($directory);
     }
 
-    public function test_it_resolves_the_template_directory_for_a_target(): void
+    public function test_it_resolves_the_template_directory_for_a_catalog_id(): void
     {
         $catalog = new TemplateCatalog;
+        $entry = $catalog->entryForId('ubuntu-slim-proxmox-x64');
 
         $this->assertSame(
             $this->directory.'/templates/proxmox/ubuntu/ubuntu-slim',
-            $catalog->templateDirectory(BuildTarget::UbuntuSlim)
+            $catalog->templateDirectory($entry)
         );
     }
 
     public function test_it_returns_null_for_a_target_that_is_not_installed(): void
     {
-        $this->assertNull((new TemplateCatalog)->templateDirectory(BuildTarget::Ubuntu2404));
+        $this->assertNull((new TemplateCatalog)->entryForId('ubuntu-24.04-proxmox-x64'));
     }
 
     public function test_it_exposes_the_pinned_runner_images_commit(): void

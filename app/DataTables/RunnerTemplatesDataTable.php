@@ -42,7 +42,10 @@ class RunnerTemplatesDataTable extends DataTable
      */
     public function query(RunnerTemplate $model): QueryBuilder
     {
-        return $model->newQuery()->with('environment')->withCount(['pools', 'proxmoxTargets']);
+        return $model->newQuery()->with('environment')->withCount([
+            'pools',
+            'proxmoxTargets as proxmox_targets_count',
+        ]);
     }
 
     public function html(): HtmlBuilder

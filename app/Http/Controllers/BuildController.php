@@ -5,6 +5,7 @@ namespace App\Http\Controllers;
 use App\DataTables\BuildsDataTable;
 use App\Models\ImageBuild;
 use App\Services\Builds\BuildProgress;
+use App\Services\Builds\Packer\TemplateCatalog;
 use Illuminate\Http\JsonResponse;
 use Illuminate\Http\RedirectResponse;
 use Illuminate\Http\Request;
@@ -14,7 +15,10 @@ class BuildController extends Controller
 {
     private const MAX_CHUNK_BYTES = 262144;
 
-    public function __construct(private readonly BuildProgress $progress) {}
+    public function __construct(
+        private readonly BuildProgress $progress,
+        private readonly TemplateCatalog $catalog,
+    ) {}
 
     public function index(BuildsDataTable $dataTable): mixed
     {
@@ -27,6 +31,7 @@ class BuildController extends Controller
 
         return view('pages.builds.show', [
             'build' => $imageBuild,
+            'catalogEntry' => $this->catalog->entryForId($imageBuild->template_catalog_id),
             'log' => $this->readLog($imageBuild),
             'progress' => $this->progress->forBuild($imageBuild),
         ]);

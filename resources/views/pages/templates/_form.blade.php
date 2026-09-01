@@ -2,7 +2,7 @@
 @php($existingMappings = $template->targetMappings->keyBy('id'))
 @php($targetCatalog = $targets->map(fn ($target) => ['id' => $target->id, 'name' => $target->name, 'node' => $target->proxmox_node, 'isoUrl' => route('nodes.isos', $target)])->values()->all())
 @php($mappingCatalog = $existingMappings->map(fn ($target) => ['id' => $target->id, 'templateVmid' => $target->pivot->template_vmid, 'buildIsoFile' => $target->pivot->build_iso_file, 'buildIsoUrl' => $target->pivot->build_iso_url, 'buildCores' => $target->pivot->build_cores, 'buildMemoryMb' => $target->pivot->build_memory_mb, 'buildDiskGb' => $target->pivot->build_disk_gb])->values()->all())
-@php($selectedBuildTarget = old('build_target', $template->build_target?->value))
+@php($selectedCatalogId = old('template_catalog_id', $template->template_catalog_id))
 
 <div data-template-form data-target-catalog="{{ base64_encode(json_encode($targetCatalog, JSON_THROW_ON_ERROR)) }}" data-template-catalog="{{ base64_encode(json_encode($catalogTemplates, JSON_THROW_ON_ERROR)) }}" data-existing-mappings="{{ base64_encode(json_encode($mappingCatalog, JSON_THROW_ON_ERROR)) }}">
 	<div class="card">
@@ -18,12 +18,12 @@
 				</select>
 			</div>
 			<div class="col-md-6">
-				<label class="form-label required" for="build_target">Target template</label>
-				<select class="form-select" data-template-select id="build_target" name="build_target" required>
+				<label class="form-label required" for="template_catalog_id">Target template</label>
+				<select class="form-select" data-template-select id="template_catalog_id" name="template_catalog_id" required>
 					<option value="">Select a target template</option>
 					@foreach ($catalogTemplates as $catalogTemplate)
-						<option value="{{ $catalogTemplate['target'] }}" @selected($selectedBuildTarget === $catalogTemplate['target']) @disabled(($catalogTemplate['platform'] ?? null) === 'windows')>
-							{{ $catalogTemplate['name'] }}{{ ($catalogTemplate['platform'] ?? null) === 'windows' ? ' (not supported yet)' : '' }}
+						<option value="{{ $catalogTemplate['id'] }}" @selected($selectedCatalogId === $catalogTemplate['id']) @disabled(! ($catalogTemplate['build_capability']['enabled'] ?? false))>
+							{{ $catalogTemplate['name'] }}{{ ($catalogTemplate['build_capability']['enabled'] ?? false) ? '' : ' ('.($catalogTemplate['build_capability']['disabled_reason'] ?? 'not supported').')' }}
 						</option>
 					@endforeach
 				</select>

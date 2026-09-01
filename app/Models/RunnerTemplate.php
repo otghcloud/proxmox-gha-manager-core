@@ -2,8 +2,8 @@
 
 namespace App\Models;
 
-use App\Enums\BuildTarget;
 use App\Enums\PoolOs;
+use App\Services\Builds\Packer\TemplateCatalog;
 use Illuminate\Database\Eloquent\Collection;
 use Illuminate\Database\Eloquent\Factories\HasFactory;
 use Illuminate\Database\Eloquent\Model;
@@ -22,13 +22,12 @@ class RunnerTemplate extends Model
     {
         return [
             'os' => PoolOs::class,
-            'build_target' => BuildTarget::class,
         ];
     }
 
     public function isBuildable(): bool
     {
-        return $this->build_target !== null
+        return $this->template_catalog_id !== null
             && $this->targetMappings()->whereNotNull('build_iso_file')->exists();
     }
 
@@ -62,7 +61,9 @@ class RunnerTemplate extends Model
      */
     public function buildableTargets(): Collection
     {
-        if ($this->build_target === null || ! $this->build_target->isSupported()) {
+        $entry = app(TemplateCatalog::class)->entryForId($this->template_catalog_id);
+
+        if ($entry === null || ! $entry->isBuildEnabled()) {
             return new Collection;
         }
 

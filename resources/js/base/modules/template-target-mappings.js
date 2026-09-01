@@ -29,7 +29,7 @@ export default function initTemplateTargetMappings() {
         '&': '&amp;', '<': '&lt;', '>': '&gt;', "'": '&#39;', '"': '&quot;',
     }[character]));
 
-    const selectedTemplate = () => templates.find((template) => template.target === templateSelect?.value);
+    const selectedTemplate = () => templates.find((template) => template.id === templateSelect?.value);
 
     const renderDetails = () => {
         const template = selectedTemplate();

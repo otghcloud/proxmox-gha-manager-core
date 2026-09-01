@@ -4,7 +4,6 @@ namespace App\Http\Controllers;
 
 use App\DataTables\RunnerTemplatesDataTable;
 use App\Enums\BuildStatus;
-use App\Enums\BuildTarget;
 use App\Enums\PoolOs;
 use App\Enums\RunnerState;
 use App\Http\Requests\RunnerTemplateBuildRequest;
@@ -73,6 +72,7 @@ class RunnerTemplateController extends Controller
 
         return view('pages.templates.show', [
             'template' => $runnerTemplate,
+            'catalogEntry' => $this->catalog->entryForId($runnerTemplate->template_catalog_id),
             'targets' => $runnerTemplate->targetMappings,
             'buildingTargetIds' => $buildingTargetIds,
             'buildableTargets' => $runnerTemplate->buildableTargets(),
@@ -126,10 +126,7 @@ class RunnerTemplateController extends Controller
             'template' => $template,
             'environments' => Environment::orderBy('name')->get(),
             'targets' => ProxmoxTarget::orderBy('name')->get(),
-            'catalogTemplates' => array_values(array_filter(
-                $this->catalog->templates(),
-                fn (array $entry): bool => BuildTarget::tryFrom($entry['target']) !== null,
-            )),
+            'catalogTemplates' => $this->catalog->templates(),
         ];
     }
 
@@ -168,12 +165,14 @@ class RunnerTemplateController extends Controller
 
         $targets = $targets->filter(fn (ProxmoxTarget $node): bool => $node->pivot->build_iso_file !== null);
 
-        if ($targets->isEmpty() || $runnerTemplate->build_target === null) {
+        $catalogEntry = $this->catalog->entryForId($runnerTemplate->template_catalog_id);
+
+        if ($targets->isEmpty() || $catalogEntry === null) {
             return back()->with('error', 'Configure a build target and an installation ISO for at least one node before building.');
         }
 
-        if (! $runnerTemplate->build_target->isSupported()) {
-            return back()->with('error', 'Windows builds are not supported yet.');
+        if (! $catalogEntry->isBuildEnabled()) {
+            return back()->with('error', $catalogEntry->disabledReason() ?? 'The selected template is not buildable.');
         }
 
         if (! ImageBuilder::isAvailable()) {
