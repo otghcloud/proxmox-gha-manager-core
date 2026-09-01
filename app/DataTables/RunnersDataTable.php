@@ -23,7 +23,7 @@ class RunnersDataTable extends DataTable
             ->addColumn('pool', fn (Runner $runner): string => ($runner->pool
                 ? '<a href="'.route('pools.show', $runner->pool).'">'.e($runner->pool->name).'</a>'
                 : '—')
-                .'<div class="text-secondary small">'.e($runner->environment->name).'</div>')
+                .'<div class="text-secondary small"><a href="'.route('environments.show', $runner->environment).'">'.e($runner->environment->name).'</a></div>')
             ->addColumn('node', fn (Runner $runner): string => ($runner->proxmoxTarget
                 ? '<a href="'.route('nodes.show', $runner->proxmoxTarget).'">'.e($runner->proxmoxTarget->name).'</a>'
                 : '—'))

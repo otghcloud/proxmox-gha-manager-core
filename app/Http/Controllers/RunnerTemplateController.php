@@ -4,6 +4,7 @@ namespace App\Http\Controllers;
 
 use App\DataTables\RunnerTemplatesDataTable;
 use App\Enums\BuildStatus;
+use App\Enums\BuildTarget;
 use App\Enums\PoolOs;
 use App\Enums\RunnerState;
 use App\Http\Requests\RunnerTemplateBuildRequest;
@@ -15,7 +16,9 @@ use App\Models\RetiredTemplateVmid;
 use App\Models\Runner;
 use App\Models\RunnerTemplate;
 use App\Services\Builds\ImageBuilder;
+use App\Services\Builds\Packer\TemplateCatalog;
 use App\Services\Builds\TemplateRebuilder;
+use App\Services\Proxmox\ProxmoxClient;
 use Illuminate\Http\RedirectResponse;
 use Illuminate\Support\Facades\DB;
 use Illuminate\View\View;
@@ -23,7 +26,10 @@ use Throwable;
 
 class RunnerTemplateController extends Controller
 {
-    public function __construct(private readonly TemplateRebuilder $rebuilder) {}
+    public function __construct(
+        private readonly TemplateRebuilder $rebuilder,
+        private readonly TemplateCatalog $catalog,
+    ) {}
 
     public function index(RunnerTemplatesDataTable $dataTable): mixed
     {
@@ -32,11 +38,7 @@ class RunnerTemplateController extends Controller
 
     public function create(): View
     {
-        return view('pages.templates.create', [
-            'template' => new RunnerTemplate(['os' => PoolOs::Linux]),
-            'environments' => Environment::orderBy('name')->get(),
-            'targets' => ProxmoxTarget::orderBy('name')->get(),
-        ]);
+        return view('pages.templates.create', $this->formData(new RunnerTemplate(['os' => PoolOs::Linux])));
     }
 
     public function store(RunnerTemplateRequest $request): RedirectResponse
@@ -86,11 +88,7 @@ class RunnerTemplateController extends Controller
 
     public function edit(RunnerTemplate $runnerTemplate): View
     {
-        return view('pages.templates.edit', [
-            'template' => $runnerTemplate,
-            'environments' => Environment::orderBy('name')->get(),
-            'targets' => ProxmoxTarget::orderBy('name')->get(),
-        ]);
+        return view('pages.templates.edit', $this->formData($runnerTemplate));
     }
 
     public function update(RunnerTemplateRequest $request, RunnerTemplate $runnerTemplate): RedirectResponse
@@ -119,6 +117,22 @@ class RunnerTemplateController extends Controller
         });
     }
 
+    /**
+     * @return array<string, mixed>
+     */
+    private function formData(RunnerTemplate $template): array
+    {
+        return [
+            'template' => $template,
+            'environments' => Environment::orderBy('name')->get(),
+            'targets' => ProxmoxTarget::orderBy('name')->get(),
+            'catalogTemplates' => array_values(array_filter(
+                $this->catalog->templates(),
+                fn (array $entry): bool => BuildTarget::tryFrom($entry['target']) !== null,
+            )),
+        ];
+    }
+
     public function destroy(RunnerTemplate $runnerTemplate): RedirectResponse
     {
         $runnerTemplate->delete();
@@ -133,6 +147,24 @@ class RunnerTemplateController extends Controller
         $targets = $target !== null
             ? $runnerTemplate->targetMappings()->whereKey($target->id)->get()
             : $runnerTemplate->targetMappings()->whereIn('proxmox_targets.id', $request->targetIds())->get();
+
+        foreach ($targets as $node) {
+            if ($node->pivot->build_iso_file !== null || ! is_string($node->pivot->build_iso_url) || $node->pivot->build_iso_url === '') {
+                continue;
+            }
+
+            if ($node->build_iso_storage === null) {
+                return back()->with('error', "Set the build ISO storage on {$node->name} before downloading its installation ISO.");
+            }
+
+            try {
+                $isoFile = (new ProxmoxClient($node))->downloadIso($node->build_iso_storage, $node->pivot->build_iso_url);
+                $runnerTemplate->targetMappings()->updateExistingPivot($node->id, ['build_iso_file' => $isoFile]);
+                $node->pivot->build_iso_file = $isoFile;
+            } catch (Throwable $e) {
+                return back()->with('error', "Could not download the installation ISO for {$node->name}: {$e->getMessage()}");
+            }
+        }
 
         $targets = $targets->filter(fn (ProxmoxTarget $node): bool => $node->pivot->build_iso_file !== null);
 

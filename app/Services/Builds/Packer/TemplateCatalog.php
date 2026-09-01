@@ -24,13 +24,26 @@ class TemplateCatalog
      */
     public function entryFor(BuildTarget $target): ?array
     {
-        foreach ($this->catalog()['templates'] ?? [] as $entry) {
+        foreach ($this->templates() as $entry) {
             if (is_array($entry) && ($entry['target'] ?? null) === $target->value) {
                 return $entry;
             }
         }
 
         return null;
+    }
+
+    /**
+     * The template metadata published with the installed image-builder bundle.
+     *
+     * @return array<int, array<string, mixed>>
+     */
+    public function templates(): array
+    {
+        return array_values(array_filter(
+            $this->catalog()['templates'] ?? [],
+            fn (mixed $entry): bool => is_array($entry) && is_string($entry['target'] ?? null),
+        ));
     }
 
     /**

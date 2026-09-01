@@ -6,6 +6,7 @@ use App\Models\ProxmoxTarget;
 use App\Services\Health\HealthCheckService;
 use App\Services\Proxmox\ProxmoxClient;
 use Illuminate\Foundation\Testing\RefreshDatabase;
+use Illuminate\Http\Client\Request;
 use Illuminate\Support\Facades\Http;
 use Tests\TestCase;
 
@@ -65,5 +66,30 @@ class ProxmoxTargetCapacityTest extends TestCase
         $target->refresh();
         $this->assertSame(1, $target->current_vm_count);
         $this->assertSame('healthy', $target->health_status);
+    }
+
+    public function test_a_missing_catalog_iso_is_downloaded_to_the_nodes_iso_storage(): void
+    {
+        $target = ProxmoxTarget::create([
+            'name' => 'PVE 02',
+            'slug' => 'pve-02',
+            'proxmox_url' => 'https://pve02.example.com:8006/api2/json',
+            'proxmox_node' => 'pve02',
+            'proxmox_token_id' => 'root@pam!token',
+            'proxmox_token_secret' => 'token-secret',
+        ]);
+
+        Http::fake([
+            '*/storage/local/content*' => Http::response(['data' => []]),
+            '*/storage/local/download-url' => Http::response(['data' => 'UPID:pve02:download']),
+            '*/tasks/*' => Http::response(['data' => ['status' => 'stopped', 'exitstatus' => 'OK']]),
+            '*/storage*' => Http::response(['data' => [['storage' => 'local', 'enabled' => 1]]]),
+        ]);
+
+        $iso = (new ProxmoxClient($target))->downloadIso('local', 'https://example.com/images/ubuntu.iso');
+
+        $this->assertSame('local:iso/ubuntu.iso', $iso);
+        Http::assertSent(fn (Request $request): bool => str_ends_with($request->url(), '/nodes/pve02/storage/local/download-url')
+            && $request->data() === ['content' => 'iso', 'filename' => 'ubuntu.iso', 'url' => 'https://example.com/images/ubuntu.iso']);
     }
 }

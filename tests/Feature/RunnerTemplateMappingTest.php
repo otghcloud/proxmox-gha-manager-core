@@ -46,9 +46,7 @@ class RunnerTemplateMappingTest extends TestCase
 
         $this->post(route('templates.store'), [
             'environment_id' => $environment->id,
-            'name' => 'Ubuntu 24.04',
-            'os' => 'linux',
-            'build_target' => 'pmx-ubuntu2404',
+            'build_target' => 'ubuntu-24.04',
             'target_ids' => [$target->id],
             'mappings' => [
                 $target->id => [
@@ -106,7 +104,7 @@ class RunnerTemplateMappingTest extends TestCase
             'name' => 'PVE 01', 'slug' => 'pve-01', 'proxmox_url' => 'https://pve.example.com:8006/api2/json',
             'proxmox_node' => 'pve', 'proxmox_token_id' => 'root@pam!runner', 'proxmox_token_secret' => 'secret',
         ]);
-        $template = RunnerTemplate::create(['environment_id' => $environment->id, 'name' => 'Ubuntu', 'os' => 'linux', 'build_target' => 'pmx-ubuntu2404']);
+        $template = RunnerTemplate::create(['environment_id' => $environment->id, 'name' => 'Ubuntu', 'os' => 'linux', 'build_target' => 'ubuntu-24.04']);
         $template->targetMappings()->attach($target->id, ['template_vmid' => 801, 'build_iso_file' => 'local:ubuntu.iso']);
 
         $this->post(route('templates.build', [$template, $target]))
@@ -125,7 +123,7 @@ class RunnerTemplateMappingTest extends TestCase
         $environment = Environment::create(['name' => 'Production', 'slug' => 'production', 'github_account_id' => $account->id]);
         $nodeA = ProxmoxTarget::create(['name' => 'PVE A', 'slug' => 'pve-a', 'proxmox_url' => 'https://pve.example.com:8006/api2/json', 'proxmox_node' => 'pve', 'proxmox_token_id' => 'root@pam!runner', 'proxmox_token_secret' => 'secret', 'build_iso_storage' => 'local', 'build_vm_storage' => 'local']);
         $nodeB = ProxmoxTarget::create(['name' => 'PVE B', 'slug' => 'pve-b', 'proxmox_url' => 'https://pve.example.com:8006/api2/json', 'proxmox_node' => 'pve', 'proxmox_token_id' => 'root@pam!runner', 'proxmox_token_secret' => 'secret', 'build_iso_storage' => 'local', 'build_vm_storage' => 'local']);
-        $template = RunnerTemplate::create(['environment_id' => $environment->id, 'name' => 'Ubuntu', 'os' => 'linux', 'build_target' => 'pmx-ubuntu2404']);
+        $template = RunnerTemplate::create(['environment_id' => $environment->id, 'name' => 'Ubuntu', 'os' => 'linux', 'build_target' => 'ubuntu-24.04']);
         $template->targetMappings()->attach($nodeA->id, ['template_vmid' => 801, 'build_iso_file' => 'local:ubuntu.iso']);
         $template->targetMappings()->attach($nodeB->id, ['template_vmid' => 802, 'build_iso_file' => 'local:ubuntu.iso']);
         ImageBuild::create(['environment_id' => $environment->id, 'runner_template_id' => $template->id, 'proxmox_target_id' => $nodeA->id, 'target' => 'pmx-ubuntu2404', 'status' => BuildStatus::Running]);

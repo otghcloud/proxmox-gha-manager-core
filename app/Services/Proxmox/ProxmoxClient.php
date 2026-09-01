@@ -141,6 +141,34 @@ class ProxmoxClient
     }
 
     /**
+     * Download an ISO to the configured node storage and return its Proxmox volume ID.
+     */
+    public function downloadIso(string $storage, string $url): string
+    {
+        $filename = basename((string) parse_url($url, PHP_URL_PATH));
+
+        if ($filename === '' || $filename === '.' || $filename === '/') {
+            throw new ProxmoxException("Could not determine an ISO filename from {$url}");
+        }
+
+        foreach ($this->isoImages() as $image) {
+            if ($image['volid'] === "{$storage}:iso/{$filename}") {
+                return $image['volid'];
+            }
+        }
+
+        $upid = $this->post("/nodes/{$this->node()}/storage/{$storage}/download-url", [
+            'content' => 'iso',
+            'filename' => $filename,
+            'url' => $url,
+        ]);
+
+        $this->awaitTask($upid, "download {$filename}");
+
+        return "{$storage}:iso/{$filename}";
+    }
+
+    /**
      * Linked clone from a template. Blocks until the Proxmox task completes.
      */
     public function clone(int $templateVmid, int $vmid, string $name): void

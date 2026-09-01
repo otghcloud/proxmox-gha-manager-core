@@ -28,6 +28,7 @@ class RunnerTemplateRequest extends FormRequest
             'target_ids.*' => ['integer', 'exists:proxmox_targets,id', 'distinct'],
             'mappings' => ['array'],
             'mappings.*.build_iso_file' => ['nullable', 'string', 'max:255'],
+            'mappings.*.build_iso_url' => ['nullable', 'url', 'max:2000'],
             'mappings.*.build_cores' => ['nullable', 'integer', 'min:1', 'max:512'],
             'mappings.*.build_memory_mb' => ['nullable', 'integer', 'min:1024'],
             'mappings.*.build_disk_gb' => ['nullable', 'integer', 'min:20'],
@@ -40,14 +41,18 @@ class RunnerTemplateRequest extends FormRequest
             'os' => ['required', Rule::enum(PoolOs::class)],
             'description' => ['nullable', 'string', 'max:2000'],
 
-            'build_target' => ['nullable', Rule::enum(BuildTarget::class)],
+            'build_target' => ['required', Rule::enum(BuildTarget::class)],
         ];
     }
 
     protected function prepareForValidation(): void
     {
+        $buildTarget = BuildTarget::tryFrom((string) $this->input('build_target'));
+
         $this->merge([
             'build_target' => $this->filled('build_target') ? $this->input('build_target') : null,
+            'name' => $buildTarget?->value,
+            'os' => $buildTarget?->os()->value,
         ]);
     }
 

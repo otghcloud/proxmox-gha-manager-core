@@ -90,13 +90,13 @@ class RunnerTemplate extends Model
 
     public function proxmoxTargets(): BelongsToMany
     {
-        return $this->targetMappings()->withPivot(['template_vmid', 'generation', 'version', 'build_iso_file', 'build_cores', 'build_memory_mb', 'build_disk_gb', 'availability_status', 'last_built_at']);
+        return $this->targetMappings()->withPivot(['template_vmid', 'generation', 'version', 'build_iso_file', 'build_iso_url', 'build_cores', 'build_memory_mb', 'build_disk_gb', 'availability_status', 'last_built_at']);
     }
 
     public function targetMappings(): BelongsToMany
     {
         return $this->belongsToMany(ProxmoxTarget::class, 'runner_template_target', 'runner_template_id', 'proxmox_target_id')
             ->using(RunnerTemplateTarget::class)
-            ->withPivot(['template_vmid', 'generation', 'version', 'build_iso_file', 'build_cores', 'build_memory_mb', 'build_disk_gb', 'availability_status', 'last_built_at']);
+            ->withPivot(['template_vmid', 'generation', 'version', 'build_iso_file', 'build_iso_url', 'build_cores', 'build_memory_mb', 'build_disk_gb', 'availability_status', 'last_built_at']);
     }
 }

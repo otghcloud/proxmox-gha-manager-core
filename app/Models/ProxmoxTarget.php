@@ -45,7 +45,7 @@ class ProxmoxTarget extends Model
     {
         return $this->belongsToMany(RunnerTemplate::class, 'runner_template_target', 'proxmox_target_id', 'runner_template_id')
             ->using(RunnerTemplateTarget::class)
-            ->withPivot(['template_vmid', 'generation', 'build_iso_file', 'build_cores', 'build_memory_mb', 'build_disk_gb', 'availability_status', 'last_built_at']);
+            ->withPivot(['template_vmid', 'generation', 'build_iso_file', 'build_iso_url', 'build_cores', 'build_memory_mb', 'build_disk_gb', 'availability_status', 'last_built_at']);
     }
 
     public function pools(): BelongsToMany
