@@ -12,8 +12,7 @@ jobs:
     name: Markdown Lint
     permissions:
       contents: write
-    # Reinstate the self-hosted label once the runner fleet is healthy again.
-    runs-on: ubuntu-latest
+    runs-on: ['self-hosted', 'ubuntu-latest']
     steps:
       - name: Check out code
         uses: actions/checkout@v7
@@ -51,7 +50,7 @@ jobs:
     name: Check links
     permissions:
       contents: read
-    runs-on: ubuntu-latest
+    runs-on: ['self-hosted', 'ubuntu-latest']
     steps:
       - name: Check out code
         uses: actions/checkout@v7
@@ -76,7 +75,7 @@ jobs:
 
   all-checks-passed:
     name: Validate Markdown / All checks passed
-    runs-on: ubuntu-slim
+    runs-on: ['self-hosted', 'ubuntu-slim']
     permissions: {}
     needs:
       - markdown-lint
