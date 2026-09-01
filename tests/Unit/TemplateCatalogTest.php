@@ -24,7 +24,7 @@ class TemplateCatalogTest extends TestCase
             'runner_images_commit' => '259c79eaf7bb3dde3d88a843bc4a4c57ea342d20',
             'templates' => [[
                 'id' => 'ubuntu-slim-proxmox-x64',
-                'target' => 'pmx-ubuntu-slim',
+                'target' => 'ubuntu-slim',
                 'template_path' => 'templates/proxmox/ubuntu/ubuntu-slim',
             ]],
         ], JSON_THROW_ON_ERROR));

@@ -10,9 +10,9 @@ namespace App\Enums;
  */
 enum BuildTarget: string
 {
-    case Ubuntu2404 = 'pmx-ubuntu2404';
-    case Ubuntu2604 = 'pmx-ubuntu2604';
-    case UbuntuSlim = 'pmx-ubuntu-slim';
+    case Ubuntu2404 = 'ubuntu-24.04';
+    case Ubuntu2604 = 'ubuntu-26.04';
+    case UbuntuSlim = 'ubuntu-slim';
     case Windows2022 = 'pmx-windows2022';
     case Windows2025 = 'pmx-windows2025';
 
