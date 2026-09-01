@@ -21,7 +21,7 @@ return new class extends Migration
         $catalog = is_readable($path) ? json_decode((string) file_get_contents($path), true) : null;
 
         if (! is_array($catalog) || ! is_array($catalog['templates'] ?? null)) {
-            throw new RuntimeException('The installed template catalog is required to migrate template catalog IDs.');
+            return;
         }
 
         foreach ($catalog['templates'] as $entry) {
