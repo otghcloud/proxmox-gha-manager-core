@@ -3,14 +3,18 @@
 use App\Http\Controllers\Auth\LoginController;
 use App\Http\Controllers\BuildController;
 use App\Http\Controllers\DashboardController;
-use App\Http\Controllers\DebugController;
 use App\Http\Controllers\EnvironmentController;
 use App\Http\Controllers\GitHubAccountController;
 use App\Http\Controllers\PoolController;
 use App\Http\Controllers\ProxmoxTargetController;
 use App\Http\Controllers\RunnerController;
 use App\Http\Controllers\RunnerTemplateController;
-use App\Http\Controllers\SettingsController;
+use App\Http\Controllers\Settings\DebugController;
+use App\Http\Controllers\Settings\GeneralController;
+use App\Http\Controllers\Settings\JobsController;
+use App\Http\Controllers\Settings\RunnersController;
+use App\Http\Controllers\Settings\TemplatesController;
+use App\Http\Controllers\Settings\UserController;
 use App\Http\Controllers\SetupController;
 use App\Http\Controllers\WebhookController;
 use App\Http\Controllers\WorkflowJobController;
@@ -83,10 +87,24 @@ Route::middleware('auth')->group(function (): void {
         Route::delete('/jobs/{job}', [WorkflowJobController::class, 'destroy'])->name('jobs.destroy');
     });
 
-    Route::prefix('administration')->group(function (): void {
-        Route::get('/settings', [SettingsController::class, 'index'])->name('settings.index');
-        Route::put('/settings', [SettingsController::class, 'update'])->name('settings.update');
-        Route::post('/settings/check-template-updates', [SettingsController::class, 'checkTemplateUpdates'])->name('settings.check-template-updates');
+    Route::prefix('settings')->name('settings.')->group(function (): void {
+        Route::get('/', fn () => redirect()->route('settings.overview'));
+
+        Route::get('/overview', [GeneralController::class, 'overview'])->name('overview');
+        Route::get('/application', [GeneralController::class, 'application'])->name('application');
+        Route::put('/application', [GeneralController::class, 'updateApplication'])->name('application.update');
+
+        Route::get('/jobs', [JobsController::class, 'index'])->name('jobs.index');
+        Route::put('/jobs', [JobsController::class, 'update'])->name('jobs.update');
+
+        Route::get('/runners', [RunnersController::class, 'index'])->name('runners.index');
+        Route::put('/runners', [RunnersController::class, 'update'])->name('runners.update');
+
+        Route::get('/templates', [TemplatesController::class, 'index'])->name('templates.index');
+        Route::put('/templates', [TemplatesController::class, 'update'])->name('templates.update');
+        Route::post('/templates/check-updates', [TemplatesController::class, 'checkUpdates'])->name('templates.check-updates');
+
+        Route::resource('users', UserController::class)->except(['show']);
 
         Route::prefix('debug')->name('debug.')->group(function (): void {
             Route::get('/', [DebugController::class, 'index'])->name('index');
@@ -94,6 +112,8 @@ Route::middleware('auth')->group(function (): void {
             Route::post('/reap-all', [DebugController::class, 'reapAll'])->name('reap-all');
             Route::delete('/runner-history', [DebugController::class, 'clearRunnerHistory'])->name('runner-history');
             Route::delete('/build-history', [DebugController::class, 'clearBuildHistory'])->name('build-history');
+            Route::delete('/webhook-logs', [DebugController::class, 'purgeWebhookLogs'])->name('webhook-logs');
+            Route::delete('/workflow-jobs', [DebugController::class, 'purgeWorkflowJobs'])->name('workflow-jobs');
             Route::get('/export-config', [DebugController::class, 'exportConfig'])->name('export-config');
         });
     });
@@ -107,7 +127,5 @@ Route::middleware('auth')->group(function (): void {
     Route::redirect('/templates', '/images/templates');
     Route::redirect('/jobs', '/workflows/jobs');
     Route::redirect('/runners', '/workflows/runners');
-    Route::redirect('/settings', '/administration/settings');
-    Route::redirect('/debug', '/administration/debug');
 
 });

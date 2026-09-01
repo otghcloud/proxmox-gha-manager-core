@@ -68,21 +68,13 @@
 						</div>
 					</li>
 
-					<li class="nav-item dropdown{{ nav_active('administration*') }}">
-						<a aria-expanded="false" class="nav-link dropdown-toggle" data-bs-auto-close="outside" data-bs-toggle="dropdown" href="#" role="button">
+					<li class="nav-item{{ nav_active('settings*') }}">
+						<a class="nav-link" href="{{ route('settings.overview') }}">
 							<span class="nav-link-icon d-md-none d-lg-inline-block">
-								<i class="fa-solid fa-screwdriver-wrench fa-fw"></i>
+								<i class="fa-solid fa-gear fa-fw"></i>
 							</span>
-							<span class="nav-link-title">Administration</span>
+							<span class="nav-link-title">Settings</span>
 						</a>
-						<div class="dropdown-menu">
-							<a class="dropdown-item{{ nav_active('administration/settings*') }}" href="{{ route('settings.index') }}">
-								<i class="fa-solid fa-gear fa-fw"></i>Settings
-							</a>
-							<a class="dropdown-item{{ nav_active('administration/debug*') }}" href="{{ route('debug.index') }}">
-								<i class="fa-solid fa-bug fa-fw"></i>Debug
-							</a>
-						</div>
 					</li>
 				</ul>
 			</div>

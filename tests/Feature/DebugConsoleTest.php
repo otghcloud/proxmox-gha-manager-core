@@ -65,12 +65,12 @@ class DebugConsoleTest extends TestCase
 
     public function test_debug_page_is_reachable(): void
     {
-        $this->get(route('debug.index'))->assertOk()->assertSee('Debug');
+        $this->get(route('settings.debug.index'))->assertOk()->assertSee('Debug');
     }
 
     public function test_export_config_downloads_zip_archive(): void
     {
-        $response = $this->get(route('debug.export-config'));
+        $response = $this->get(route('settings.debug.export-config'));
         $response->assertOk();
         $response->assertHeader('content-type', 'application/zip');
     }
@@ -81,7 +81,7 @@ class DebugConsoleTest extends TestCase
 
         $this->assertTrue($settings->bool(SettingsRepository::REAPING_ENABLED));
 
-        $this->put(route('debug.toggle'), [
+        $this->put(route('settings.debug.toggle'), [
             'key' => SettingsRepository::REAPING_ENABLED,
             'enabled' => 0,
         ])->assertRedirect();
@@ -100,7 +100,7 @@ class DebugConsoleTest extends TestCase
 
     public function test_reap_all_is_requested_for_the_next_scheduled_pass(): void
     {
-        $this->post(route('debug.reap-all'))->assertRedirect();
+        $this->post(route('settings.debug.reap-all'))->assertRedirect();
 
         $this->assertTrue(app(SettingsRepository::class)->bool(SettingsRepository::FORCE_REAP_ALL_REQUESTED, false));
     }
@@ -132,7 +132,7 @@ class DebugConsoleTest extends TestCase
         $historic = $this->runner(902, RunnerState::Destroyed);
         $historic->events()->create(['to_state' => RunnerState::Destroyed->value, 'created_at' => now()]);
 
-        $this->delete(route('debug.runner-history'))->assertRedirect();
+        $this->delete(route('settings.debug.runner-history'))->assertRedirect();
 
         $this->assertModelExists($live);
         $this->assertModelMissing($historic);
@@ -149,7 +149,7 @@ class DebugConsoleTest extends TestCase
             'started_at' => now(),
         ]);
 
-        $this->delete(route('debug.build-history'))->assertRedirect();
+        $this->delete(route('settings.debug.build-history'))->assertRedirect();
 
         $this->assertSame(0, ImageBuild::count());
     }

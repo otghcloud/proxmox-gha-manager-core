@@ -34,8 +34,8 @@ class NavigationTest extends TestCase
             'templates' => ['templates.index', '/images/templates'],
             'jobs' => ['jobs.index', '/workflows/jobs'],
             'runners' => ['runners.index', '/workflows/runners'],
-            'settings' => ['settings.index', '/administration/settings'],
-            'debug' => ['debug.index', '/administration/debug'],
+            'settings' => ['settings.overview', '/settings/overview'],
+            'debug' => ['settings.debug.index', '/settings/debug'],
         ];
     }
 
@@ -60,8 +60,6 @@ class NavigationTest extends TestCase
             'templates' => ['/templates', '/images/templates'],
             'jobs' => ['/jobs', '/workflows/jobs'],
             'runners' => ['/runners', '/workflows/runners'],
-            'settings' => ['/settings', '/administration/settings'],
-            'debug' => ['/debug', '/administration/debug'],
         ];
     }
 
@@ -78,7 +76,7 @@ class NavigationTest extends TestCase
             ->assertSee('Config')
             ->assertSee('Images')
             ->assertSee('Workflows')
-            ->assertSee('Administration')
+            ->assertSee('Settings')
             ->assertSee('dropdown-toggle', escape: false);
     }
 }
