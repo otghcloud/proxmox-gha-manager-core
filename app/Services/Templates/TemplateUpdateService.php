@@ -57,8 +57,8 @@ class TemplateUpdateService
                 $remoteVersion = $remote['version'] ?? '0.0.0';
                 $localVersion = $localTemplates[$id] ?? '0.0.0';
 
-                if ($target && $remoteVersion !== '0.0.0') {
-                    $remoteVersions[$target] = $remoteVersion;
+                if ($id && $remoteVersion !== '0.0.0') {
+                    $remoteVersions[$id] = $remoteVersion;
                 }
 
                 if ($id && version_compare($remoteVersion, $localVersion, '>')) {
@@ -90,11 +90,11 @@ class TemplateUpdateService
     }
 
     /**
-     * Get local template version for a specific build target from local templates.json.
+     * Get local template version for a specific immutable catalog ID.
      */
-    public static function getLocalVersionForTarget(?string $target): ?string
+    public static function getLocalVersionForId(?string $id): ?string
     {
-        if (! $target) {
+        if (! $id) {
             return null;
         }
 
@@ -109,7 +109,7 @@ class TemplateUpdateService
         }
 
         foreach ($catalog['templates'] as $t) {
-            if (is_array($t) && ($t['target'] ?? null) === $target && ! empty($t['version'])) {
+            if (is_array($t) && ($t['id'] ?? null) === $id && ! empty($t['version'])) {
                 return (string) $t['version'];
             }
         }
@@ -118,11 +118,32 @@ class TemplateUpdateService
     }
 
     /**
-     * Check if a remote update exists for the given target, comparing against current version.
+     * Used only by historical migrations created before catalog IDs existed.
      */
-    public function getAvailableUpdateVersion(?string $target, ?string $currentVersion = null): ?string
+    public static function getLocalVersionForTarget(?string $target): ?string
     {
-        if (! $target || ! $this->settings->templateAutoCheckEnabled()) {
+        if (! $target) {
+            return null;
+        }
+
+        $path = rtrim(config('builds.image_builder_path'), '/').'/templates.json';
+        $catalog = is_readable($path) ? json_decode((string) file_get_contents($path), true) : null;
+
+        foreach ($catalog['templates'] ?? [] as $entry) {
+            if (is_array($entry) && ($entry['target'] ?? null) === $target) {
+                return is_string($entry['version'] ?? null) ? $entry['version'] : null;
+            }
+        }
+
+        return null;
+    }
+
+    /**
+     * Check if a remote update exists for the given catalog ID, comparing against current version.
+     */
+    public function getAvailableUpdateVersion(?string $id, ?string $currentVersion = null): ?string
+    {
+        if (! $id || ! $this->settings->templateAutoCheckEnabled()) {
             return null;
         }
 
@@ -136,10 +157,10 @@ class TemplateUpdateService
             return null;
         }
 
-        $remoteVersion = $data['remote_versions'][$target] ?? null;
+        $remoteVersion = $data['remote_versions'][$id] ?? null;
         if (! $remoteVersion) {
             foreach ($data['updates'] ?? [] as $up) {
-                if (($up['target'] ?? null) === $target) {
+                if (($up['id'] ?? null) === $id) {
                     $remoteVersion = $up['new_version'] ?? null;
                     break;
                 }
@@ -150,7 +171,7 @@ class TemplateUpdateService
             return null;
         }
 
-        $effectiveCurrent = $currentVersion ?: self::getLocalVersionForTarget($target) ?: '0.0.0';
+        $effectiveCurrent = $currentVersion ?: self::getLocalVersionForId($id) ?: '0.0.0';
 
         return version_compare($remoteVersion, $effectiveCurrent, '>') ? $remoteVersion : null;
     }

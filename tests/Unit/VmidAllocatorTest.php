@@ -3,7 +3,6 @@
 namespace Tests\Unit;
 
 use App\Enums\BuildStatus;
-use App\Enums\BuildTarget;
 use App\Enums\PoolOs;
 use App\Enums\RunnerState;
 use App\Exceptions\ProvisioningException;
@@ -59,7 +58,7 @@ class VmidAllocatorTest extends TestCase
             'environment_id' => $template->environment_id,
             'runner_template_id' => $template->id,
             'proxmox_target_id' => $target->id,
-            'target' => BuildTarget::Ubuntu2404->value,
+            'template_catalog_id' => 'ubuntu-24.04-proxmox-x64',
             'status' => BuildStatus::Running,
             'template_vmid' => 803,
         ]);
@@ -81,7 +80,7 @@ class VmidAllocatorTest extends TestCase
             'environment_id' => $template->environment_id,
             'runner_template_id' => $template->id,
             'proxmox_target_id' => $target->id,
-            'target' => BuildTarget::Ubuntu2404->value,
+            'template_catalog_id' => 'ubuntu-24.04-proxmox-x64',
             'status' => BuildStatus::Failed,
             'template_vmid' => 801,
         ]);

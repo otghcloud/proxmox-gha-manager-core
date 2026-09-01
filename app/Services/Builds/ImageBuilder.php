@@ -3,12 +3,12 @@
 namespace App\Services\Builds;
 
 use App\Enums\BuildStatus;
-use App\Enums\BuildTarget;
 use App\Exceptions\ProvisioningException;
 use App\Models\ImageBuild;
 use App\Models\RunnerTemplate;
 use App\Services\Builds\Packer\RunnerImagesLocator;
 use App\Services\Builds\Packer\TemplateCatalog;
+use App\Services\Builds\Packer\TemplateCatalogEntry;
 use App\Services\Builds\Packer\UserDataRenderer;
 use App\Services\Proxmox\ProxmoxClient;
 use Illuminate\Support\Facades\DB;
@@ -39,17 +39,17 @@ class ImageBuilder
     {
         $template = $build->runnerTemplate;
         $mapping = $template?->targetMappings()->whereKey($build->proxmox_target_id)->first();
-        $target = BuildTarget::from($build->target);
+        $entry = $this->catalog->entryForId($build->template_catalog_id);
 
-        if ($template === null || $mapping === null) {
+        if ($template === null || $mapping === null || $entry === null) {
             throw new ProvisioningException('The build has no template attached.');
         }
 
         $logPath = $this->logPath($build);
-        $templateDirectory = $this->catalog->templateDirectory($target);
+        $templateDirectory = $this->catalog->templateDirectory($entry);
 
         if ($templateDirectory === null) {
-            throw new ProvisioningException('No installed template matches the build target '.$target->value.'.');
+            throw new ProvisioningException('No installed template matches the build catalog ID '.$build->template_catalog_id.'.');
         }
 
         DB::transaction(function () use ($build, $logPath) {
@@ -68,9 +68,9 @@ class ImageBuilder
             (string) $account->linux_ssh_password,
         );
 
-        $process = $this->runPacker($templateDirectory, $this->buildEnvironment($build, $target), $logPath);
+        $process = $this->runPacker($templateDirectory, $this->buildEnvironment($build, $entry), $logPath);
 
-        DB::transaction(function () use ($build, $process, $template, $target) {
+        DB::transaction(function () use ($build, $process, $template, $entry) {
             $build->forceFill([
                 'status' => $process->isSuccessful() ? BuildStatus::Succeeded : BuildStatus::Failed,
                 'exit_code' => $process->getExitCode(),
@@ -80,7 +80,7 @@ class ImageBuilder
             if (! $process->isSuccessful()) {
                 Log::error('Image build failed', [
                     'build' => $build->id,
-                    'target' => $target->value,
+                    'target' => $entry->target(),
                     'exit_code' => $process->getExitCode(),
                 ]);
 
@@ -93,7 +93,7 @@ class ImageBuilder
                 Log::error('Image build succeeded but the template record could not be updated', [
                     'build' => $build->id,
                     'template' => $template->id,
-                    'target' => $target->value,
+                    'target' => $entry->target(),
                     'error' => $e->getMessage(),
                 ]);
             }
@@ -107,13 +107,13 @@ class ImageBuilder
      *
      * @return array<string, string>
      */
-    private function buildEnvironment(ImageBuild $build, BuildTarget $target): array
+    private function buildEnvironment(ImageBuild $build, TemplateCatalogEntry $template): array
     {
         $variables = $this->environmentVariables($build);
-        $scriptsRoot = $this->runnerImages->scriptsRoot($target);
+        $scriptsRoot = $this->runnerImages->scriptsRoot($template);
 
         if ($scriptsRoot !== null) {
-            $variables[$target->scriptsRootVariable()] = $scriptsRoot;
+            $variables['PKR_VAR_runner_images_root'] = $scriptsRoot;
         }
 
         return $variables;
@@ -216,8 +216,6 @@ class ImageBuilder
         $template = $build->runnerTemplate;
         $targetNode = $build->proxmoxTarget;
         $mapping = $template->targetMappings()->whereKey($targetNode->id)->first();
-        $target = BuildTarget::from($build->target);
-        $sizing = $target->sizingVariables();
         $mapping = $template->targetMappings()->whereKey($targetNode->id)->firstOrFail();
 
         $variables = [
@@ -233,7 +231,7 @@ class ImageBuilder
             'PKR_VAR_pmx_network_bridge' => (string) ($targetNode->network_bridge ?: 'vmbr0'),
             'PKR_VAR_ssh_username' => (string) $account->linux_ssh_username,
             'PKR_VAR_ssh_password' => (string) $account->linux_ssh_password,
-            $target->isoVariable() => (string) $mapping->pivot->build_iso_file,
+            'PKR_VAR_pmx_iso_file' => (string) $mapping->pivot->build_iso_file,
 
             // Authenticated plugin and tool downloads, which otherwise hit GitHub's anonymous rate limit.
             'PACKER_GITHUB_API_TOKEN' => (string) $account->github_token,
@@ -250,11 +248,11 @@ class ImageBuilder
         }
 
         // Sizing is per node; anything left blank falls back to the Packer template's own default.
-        foreach (['cores' => 'build_cores', 'memory' => 'build_memory_mb', 'disk' => 'build_disk_gb'] as $key => $column) {
+        foreach (['PKR_VAR_build_cpu_cores' => 'build_cores', 'PKR_VAR_build_memory_mb' => 'build_memory_mb', 'PKR_VAR_build_disk_gb' => 'build_disk_gb'] as $variable => $column) {
             $value = $mapping->pivot->{$column};
 
             if ($value !== null) {
-                $variables[$sizing[$key]] = (string) $value;
+                $variables[$variable] = (string) $value;
             }
         }
 

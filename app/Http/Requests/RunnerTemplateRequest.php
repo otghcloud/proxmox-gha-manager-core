@@ -2,8 +2,8 @@
 
 namespace App\Http\Requests;
 
-use App\Enums\BuildTarget;
 use App\Enums\PoolOs;
+use App\Services\Builds\Packer\TemplateCatalog;
 use Illuminate\Foundation\Http\FormRequest;
 use Illuminate\Validation\Rule;
 use Illuminate\Validation\Validator;
@@ -41,24 +41,31 @@ class RunnerTemplateRequest extends FormRequest
             'os' => ['required', Rule::enum(PoolOs::class)],
             'description' => ['nullable', 'string', 'max:2000'],
 
-            'build_target' => ['required', Rule::enum(BuildTarget::class)],
+            'template_catalog_id' => ['required', 'string'],
         ];
     }
 
     protected function prepareForValidation(): void
     {
-        $buildTarget = BuildTarget::tryFrom((string) $this->input('build_target'));
+        $entry = app(TemplateCatalog::class)->entryForId($this->input('template_catalog_id'));
 
         $this->merge([
-            'build_target' => $this->filled('build_target') ? $this->input('build_target') : null,
-            'name' => $buildTarget?->value,
-            'os' => $buildTarget?->os()->value,
+            'name' => $entry?->name(),
+            'os' => $entry?->platform(),
         ]);
     }
 
     public function withValidator(Validator $validator): void
     {
         $validator->after(function (Validator $validator): void {
+            $entry = app(TemplateCatalog::class)->entryForId($this->input('template_catalog_id'));
+
+            if ($entry === null) {
+                $validator->errors()->add('template_catalog_id', 'The selected template is not present in the installed catalog.');
+            } elseif (! $entry->isBuildEnabled()) {
+                $validator->errors()->add('template_catalog_id', $entry->disabledReason() ?? 'The selected template is not buildable.');
+            }
+
             $selected = array_map('intval', $this->input('target_ids', []));
 
             foreach (array_keys($this->input('mappings', [])) as $targetId) {

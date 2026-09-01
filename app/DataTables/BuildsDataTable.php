@@ -4,6 +4,7 @@ namespace App\DataTables;
 
 use App\Helpers\DataTableHelpers;
 use App\Models\ImageBuild;
+use App\Services\Builds\Packer\TemplateCatalog;
 use Illuminate\Database\Eloquent\Builder as QueryBuilder;
 use Yajra\DataTables\EloquentDataTable;
 use Yajra\DataTables\Html\Builder as HtmlBuilder;
@@ -18,7 +19,7 @@ class BuildsDataTable extends DataTable
     public function dataTable(QueryBuilder $query): EloquentDataTable
     {
         return (new EloquentDataTable($query))
-            ->editColumn('target', fn (ImageBuild $build): string => '<a href="'.route('builds.show', $build).'">'.e($build->target).'</a>')
+            ->addColumn('template_target', fn (ImageBuild $build): string => '<a href="'.route('builds.show', $build).'">'.e(app(TemplateCatalog::class)->entryForId($build->template_catalog_id)?->name() ?? $build->template_catalog_id).'</a>')
             ->addColumn('environment', fn (ImageBuild $build): string => e($build->environment->name))
             ->addColumn('template', fn (ImageBuild $build): string => e($build->runnerTemplate?->name ?? '—'))
             ->addColumn('node', fn (ImageBuild $build): string => e($build->proxmoxTarget?->name ?? '—'))
@@ -70,7 +71,7 @@ class BuildsDataTable extends DataTable
     public function getColumns(): array
     {
         return [
-            Column::make('target'),
+            Column::computed('template_target')->title('Target'),
             Column::computed('environment'),
             Column::computed('template'),
             Column::computed('node')->title('Node'),

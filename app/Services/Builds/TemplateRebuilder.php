@@ -8,9 +8,9 @@ use App\Models\ImageBuild;
 use App\Models\ProxmoxTarget;
 use App\Models\RetiredTemplateVmid;
 use App\Models\RunnerTemplate;
+use App\Services\Builds\Packer\TemplateCatalog;
 use App\Services\Provisioning\VmidAllocator;
 use App\Services\Proxmox\ProxmoxClient;
-use App\Services\Templates\TemplateUpdateService;
 use Illuminate\Support\Collection;
 use Illuminate\Support\Facades\DB;
 use Illuminate\Support\Facades\Log;
@@ -25,6 +25,8 @@ class TemplateRebuilder
     public const MODE_SEQUENTIAL = 'sequential';
 
     public const MODE_PARALLEL = 'parallel';
+
+    public function __construct(private readonly TemplateCatalog $catalog = new TemplateCatalog) {}
 
     /**
      * Queue a build per node. Sequential batches only dispatch the first; the rest follow as each
@@ -55,7 +57,11 @@ class TemplateRebuilder
      */
     private function reserve(RunnerTemplate $template, ProxmoxTarget $target, ?int $userId, ?string $batchId, int $index): ImageBuild
     {
-        $version = TemplateUpdateService::getLocalVersionForTarget($template->build_target?->value);
+        $entry = $this->catalog->entryForId($template->template_catalog_id);
+
+        if ($entry === null) {
+            throw new \RuntimeException('The template is not present in the installed catalog.');
+        }
 
         return (new VmidAllocator(new ProxmoxClient($target)))->allocate(
             $target,
@@ -65,10 +71,10 @@ class TemplateRebuilder
                 'runner_template_id' => $template->id,
                 'proxmox_target_id' => $target->id,
                 'triggered_by' => $userId,
-                'target' => $template->build_target->value,
+                'template_catalog_id' => $entry->id(),
                 'status' => BuildStatus::Queued,
                 'template_vmid' => $vmid,
-                'version' => $version,
+                'version' => $entry->version(),
                 'rebuild_batch_id' => $batchId,
                 'sequence' => $index,
             ]),
@@ -85,7 +91,7 @@ class TemplateRebuilder
             $mapping = $template->targetMappings()->whereKey($build->proxmox_target_id)->firstOrFail();
             $previous = $mapping->pivot->template_vmid;
             $generation = (int) $mapping->pivot->generation + 1;
-            $version = $build->version ?? TemplateUpdateService::getLocalVersionForTarget($build->target);
+            $version = $build->version ?? $this->catalog->entryForId($build->template_catalog_id)?->version();
 
             if ($previous !== null && (int) $previous !== $vmid) {
                 RetiredTemplateVmid::create([

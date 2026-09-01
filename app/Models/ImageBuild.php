@@ -23,6 +23,7 @@ class ImageBuild extends Model
             'proxmox_target_id' => 'integer',
             'template_vmid' => 'integer',
             'sequence' => 'integer',
+            'template_catalog_id' => 'string',
         ];
     }
 

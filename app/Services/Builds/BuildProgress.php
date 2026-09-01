@@ -4,19 +4,24 @@ namespace App\Services\Builds;
 
 use App\Enums\BuildStatus;
 use App\Models\ImageBuild;
+use App\Services\Builds\Packer\TemplateCatalog;
 
 class BuildProgress
 {
+    public function __construct(private readonly TemplateCatalog $catalog = new TemplateCatalog) {}
+
     /**
      * @return array<string, mixed>
      */
     public function forBuild(ImageBuild $build): array
     {
-        $template = $this->templateForTarget((string) $build->target);
+        $entry = $this->catalog->entryForId($build->template_catalog_id);
 
-        if ($template === null) {
+        if ($entry === null) {
             return ['available' => false];
         }
+
+        $template = $entry->data();
 
         $stages = $template['build_stages'] ?? [];
 
@@ -61,8 +66,8 @@ class BuildProgress
 
         return [
             'available' => true,
-            'target' => $template['target'] ?? $build->target,
-            'name' => $template['name'] ?? $build->target,
+            'target' => $entry->target(),
+            'name' => $entry->name(),
             'estimated_minutes' => $estimatedMinutes,
             'estimated_duration' => $this->formatEstimatedMinutes($estimatedMinutes),
             'stage_count' => $stageCount,
@@ -104,46 +109,6 @@ class BuildProgress
         return array_values(array_unique($matches[1] ?? []));
     }
 
-    /**
-     * @return array<string, mixed>|null
-     */
-    private function templateForTarget(string $target): ?array
-    {
-        $path = rtrim(config('builds.image_builder_path'), '/').'/templates.json';
-
-        if (! is_readable($path)) {
-            return null;
-        }
-
-        $catalog = json_decode((string) file_get_contents($path), true);
-
-        if (! is_array($catalog) || ! is_array($catalog['templates'] ?? null)) {
-            return null;
-        }
-
-        foreach ($catalog['templates'] as $template) {
-            if (is_array($template) && ($template['target'] ?? null) === $target) {
-                $templateJson = $template['template_json_path'] ?? null;
-
-                if (is_string($templateJson)) {
-                    $templatePath = $this->metadataPath($templateJson);
-
-                    if (is_readable($templatePath)) {
-                        $fullTemplate = json_decode((string) file_get_contents($templatePath), true);
-
-                        if (is_array($fullTemplate)) {
-                            return $fullTemplate;
-                        }
-                    }
-                }
-
-                return $template;
-            }
-        }
-
-        return null;
-    }
-
     private function estimatedMinutes(array $template): ?int
     {
         $minutes = $template['build_requirements']['estimated_minutes'] ?? null;
@@ -171,19 +136,5 @@ class BuildProgress
         }
 
         return $duration;
-    }
-
-    private function metadataPath(string $templateJson): string
-    {
-        if (str_starts_with($templateJson, '/')) {
-            return $templateJson;
-        }
-
-        // Catalogs published before the repository split prefixed paths with the checkout directory.
-        if (str_starts_with($templateJson, 'image-builder/')) {
-            $templateJson = substr($templateJson, strlen('image-builder/'));
-        }
-
-        return rtrim(config('builds.image_builder_path'), '/').'/'.$templateJson;
     }
 }

@@ -3,7 +3,6 @@
 namespace Tests\Feature;
 
 use App\Enums\BuildStatus;
-use App\Enums\BuildTarget;
 use App\Enums\PoolOs;
 use App\Enums\RunnerState;
 use App\Jobs\BuildImageJob;
@@ -69,7 +68,7 @@ class TemplateRebuildTest extends TestCase
             'environment_id' => $this->environment->id,
             'name' => 'ubuntu-slim',
             'os' => PoolOs::Linux,
-            'build_target' => BuildTarget::Ubuntu2404,
+            'template_catalog_id' => 'ubuntu-24.04-proxmox-x64',
         ]);
 
         $this->template->targetMappings()->attach($this->target->id, [
@@ -197,7 +196,7 @@ class TemplateRebuildTest extends TestCase
         $this->assertSame('42', $variables['PKR_VAR_pmx_vlan_tag']);
         $this->assertSame('local', $variables['PKR_VAR_pmx_iso_storage']);
         $this->assertSame('local-lvm', $variables['PKR_VAR_pmx_vm_storage']);
-        $this->assertSame('local:iso/ubuntu.iso', $variables['PKR_VAR_pmx_ubuntu2404_iso_file']);
+        $this->assertSame('local:iso/ubuntu.iso', $variables['PKR_VAR_pmx_iso_file']);
     }
 
     public function test_a_node_without_a_vlan_does_not_pass_one_to_packer(): void
@@ -241,9 +240,9 @@ class TemplateRebuildTest extends TestCase
         $method = new ReflectionMethod(ImageBuilder::class, 'environmentVariables');
         $variables = $method->invoke(new ImageBuilder($this->createMock(ProxmoxClient::class)), $build);
 
-        $this->assertSame('8', $variables['PKR_VAR_ubuntu_cpu_cores']);
-        $this->assertSame('16384', $variables['PKR_VAR_ubuntu_memory_mb']);
-        $this->assertSame('200', $variables['PKR_VAR_ubuntu_disk_size_gb']);
+        $this->assertSame('8', $variables['PKR_VAR_build_cpu_cores']);
+        $this->assertSame('16384', $variables['PKR_VAR_build_memory_mb']);
+        $this->assertSame('200', $variables['PKR_VAR_build_disk_gb']);
     }
 
     public function test_blank_build_sizing_is_left_to_the_packer_template(): void
@@ -260,9 +259,9 @@ class TemplateRebuildTest extends TestCase
         $method = new ReflectionMethod(ImageBuilder::class, 'environmentVariables');
         $variables = $method->invoke(new ImageBuilder($this->createMock(ProxmoxClient::class)), $build);
 
-        $this->assertArrayNotHasKey('PKR_VAR_ubuntu_cpu_cores', $variables);
-        $this->assertArrayNotHasKey('PKR_VAR_ubuntu_memory_mb', $variables);
-        $this->assertArrayNotHasKey('PKR_VAR_ubuntu_disk_size_gb', $variables);
+        $this->assertArrayNotHasKey('PKR_VAR_build_cpu_cores', $variables);
+        $this->assertArrayNotHasKey('PKR_VAR_build_memory_mb', $variables);
+        $this->assertArrayNotHasKey('PKR_VAR_build_disk_gb', $variables);
     }
 
     public function test_a_failed_build_leaves_every_node_on_its_current_template(): void
@@ -291,7 +290,7 @@ class TemplateRebuildTest extends TestCase
             'environment_id' => $this->environment->id,
             'runner_template_id' => $this->template->id,
             'proxmox_target_id' => $other->id,
-            'target' => $this->template->build_target->value,
+            'template_catalog_id' => $this->template->template_catalog_id,
             'status' => BuildStatus::Queued,
             'template_vmid' => 812,
             'rebuild_batch_id' => 'batch-fail',
@@ -317,7 +316,7 @@ class TemplateRebuildTest extends TestCase
             'environment_id' => $this->environment->id,
             'runner_template_id' => $this->template->id,
             'proxmox_target_id' => $this->target->id,
-            'target' => $this->template->build_target->value,
+            'template_catalog_id' => $this->template->template_catalog_id,
             'status' => BuildStatus::Queued,
             'template_vmid' => $vmid,
             'rebuild_batch_id' => $batch,
