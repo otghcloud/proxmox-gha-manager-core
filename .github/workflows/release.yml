@@ -34,7 +34,7 @@ permissions:
 
 jobs:
   version:
-    name: Version and tag
+    name: release:version-and-tag
     if: github.event_name == 'workflow_dispatch' || github.event.pull_request.merged == true
     permissions:
       contents: write
@@ -45,7 +45,7 @@ jobs:
       bump_override: ${{ inputs.bump_override || 'auto' }}
 
   publish_docker:
-    name: Publish manager image
+    name: release:publish-image
     needs:
       - version
     if: needs.version.outputs.released == 'true'
@@ -87,7 +87,7 @@ jobs:
             ${{ env.IMAGE }}:latest
 
   all-checks-passed:
-    name: Release core / All checks passed
+    name: release:all-checks-passed
     runs-on: ['self-hosted', 'ubuntu-slim']
     permissions: {}
     needs:

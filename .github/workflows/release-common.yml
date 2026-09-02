@@ -29,7 +29,7 @@ permissions:
 
 jobs:
   bump:
-    name: Bump version
+    name: release:bump
     runs-on: ['self-hosted', 'ubuntu-slim']
     outputs:
       skip: ${{ steps.skip_check.outputs.skip }}
@@ -167,7 +167,7 @@ jobs:
           fi
 
   release:
-    name: Tag and release
+    name: release
     needs:
       - bump
     if: needs.bump.outputs.skip == 'false'

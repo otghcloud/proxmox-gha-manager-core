@@ -15,7 +15,7 @@ permissions:
 
 jobs:
   validate:
-    name: Validate PR title
+    name: validate:pr-title
     runs-on: ['self-hosted', 'ubuntu-slim']
     if: github.event.pull_request.user.login != 'dependabot[bot]'
     steps:
