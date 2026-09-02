@@ -36,7 +36,6 @@
 										{{ $environment->enabled ? 'Enabled' : 'Disabled' }}
 									</span>
 								</div>
-								<div class="text-secondary small mb-3">{{ $environment->githubAccount->login }} &middot; reusable Proxmox nodes</div>
 
 								@php($usage = $targetCapacity > 0 ? min(100, ($environment->active_runners_count / $targetCapacity) * 100) : 0)
 								<div class="d-flex justify-content-between small mb-1">
