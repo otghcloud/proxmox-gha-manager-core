@@ -87,9 +87,13 @@ class TemplatesController extends Controller
         try {
             $downloader->activate($version);
 
+            $message = $version === TemplateDownloadService::BUNDLED
+                ? 'Activated the bundle packaged with this release.'
+                : "Activated template bundle v{$version}.";
+
             return redirect()
                 ->route('settings.templates.index')
-                ->with('success', "Activated template bundle v{$version}.");
+                ->with('success', $message);
         } catch (Throwable $e) {
             return redirect()
                 ->route('settings.templates.index')

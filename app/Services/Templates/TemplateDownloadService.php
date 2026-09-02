@@ -18,6 +18,9 @@ class TemplateDownloadService
 {
     private const LOCK_KEY = 'template-download';
 
+    /** Reserved version token meaning "revert to the bundle baked into the container image". */
+    public const BUNDLED = 'bundled';
+
     public function __construct(
         private readonly SettingsRepository $settings,
     ) {}
@@ -63,6 +66,13 @@ class TemplateDownloadService
      */
     public function activate(string $version): void
     {
+        if ($version === self::BUNDLED) {
+            $this->settings->set(SettingsRepository::TEMPLATE_ACTIVE_VERSION, null);
+            $this->prune();
+
+            return;
+        }
+
         $path = $this->installRoot().'/'.$version;
 
         if (! is_file($path.'/templates.json')) {
@@ -75,26 +85,36 @@ class TemplateDownloadService
     }
 
     /**
-     * Installed bundle versions, newest first, for the settings UI's rollback picker.
+     * Installed bundle versions, newest first, for the settings UI's rollback picker. Includes the
+     * bundle baked into the container image at build time, since that is a valid fallback/rollback
+     * target even though it was never "downloaded".
      *
-     * @return array<int, array{version: string, downloaded_at: int, active: bool}>
+     * @return array<int, array{version: string, downloaded_at: int, active: bool, bundled: bool}>
      */
     public function installedVersions(): array
     {
         $root = $this->installRoot();
         $active = $this->settings->get(SettingsRepository::TEMPLATE_ACTIVE_VERSION);
+        $activeIsInstalled = is_string($active) && $active !== '' && is_dir($root.'/'.$active);
 
-        if (! is_dir($root)) {
-            return [];
+        $entries = [];
+
+        if (is_dir($root)) {
+            $versions = array_filter(scandir($root) ?: [], fn (string $entry): bool => $entry[0] !== '.' && is_dir($root.'/'.$entry));
+
+            $entries = array_map(fn (string $version): array => [
+                'version' => $version,
+                'downloaded_at' => filemtime($root.'/'.$version) ?: 0,
+                'active' => $activeIsInstalled && $version === $active,
+                'bundled' => false,
+            ], $versions);
         }
 
-        $versions = array_filter(scandir($root) ?: [], fn (string $entry): bool => $entry[0] !== '.' && is_dir($root.'/'.$entry));
+        $bundled = $this->bundledEntry(! $activeIsInstalled);
 
-        $entries = array_map(fn (string $version): array => [
-            'version' => $version,
-            'downloaded_at' => filemtime($root.'/'.$version) ?: 0,
-            'active' => $version === $active,
-        ], $versions);
+        if ($bundled !== null) {
+            $entries[] = $bundled;
+        }
 
         usort($entries, fn (array $a, array $b): int => version_compare($b['version'], $a['version']));
 
@@ -111,7 +131,7 @@ class TemplateDownloadService
             : 0;
 
         $versions = $this->installedVersions();
-        $inactive = array_values(array_filter($versions, fn (array $entry): bool => ! $entry['active']));
+        $inactive = array_values(array_filter($versions, fn (array $entry): bool => ! $entry['active'] && ! $entry['bundled']));
 
         foreach (array_slice($inactive, $keep) as $entry) {
             File::deleteDirectory($this->installRoot().'/'.$entry['version']);
@@ -121,6 +141,32 @@ class TemplateDownloadService
     private function installRoot(): string
     {
         return rtrim((string) config('builds.templates_install_path'), '/');
+    }
+
+    /**
+     * @return array{version: string, downloaded_at: int, active: bool, bundled: bool}|null
+     */
+    private function bundledEntry(bool $active): ?array
+    {
+        $manifest = rtrim((string) config('builds.image_builder_path'), '/').'/templates.json';
+
+        if (! is_readable($manifest)) {
+            return null;
+        }
+
+        $catalog = json_decode((string) file_get_contents($manifest), true);
+        $version = is_array($catalog) ? ($catalog['image_builder_version'] ?? null) : null;
+
+        if (! is_string($version) || $version === '') {
+            return null;
+        }
+
+        return [
+            'version' => $version,
+            'downloaded_at' => filemtime($manifest) ?: 0,
+            'active' => $active,
+            'bundled' => true,
+        ];
     }
 
     private function fetchArchive(string $destination): void

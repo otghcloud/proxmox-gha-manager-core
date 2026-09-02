@@ -113,8 +113,9 @@
 		</div>
 	</form>
 
-	<div class="card mt-3">
-		<div class="card-header d-flex align-items-center justify-content-between">
+	<hr class="my-0">
+	<div class="card-body">
+		<div class="d-flex align-items-center justify-content-between">
 			<h3 class="card-title mb-0">Installed template bundles</h3>
 			<button class="btn btn-sm btn-outline-secondary" form="download-template-update-form" type="submit">
 				<x-action-content icon="fa-solid fa-download" label="Download now" />
@@ -126,12 +127,17 @@
 				<tbody>
 					@forelse ($installedVersions as $bundle)
 						<tr>
-							<td>v{{ $bundle['version'] }}</td>
+							<td>
+								v{{ $bundle['version'] }}
+								@if ($bundle['bundled'])
+									<span class="badge bg-blue-lt ms-1">Pre-packaged</span>
+								@endif
+							</td>
 							<td>{{ \Carbon\Carbon::createFromTimestamp($bundle['downloaded_at'])->diffForHumans() }}</td>
 							<td><span class="badge bg-{{ $bundle['active'] ? 'green' : 'secondary' }}-lt">{{ $bundle['active'] ? 'Active' : 'Installed' }}</span></td>
 							<td class="text-end">
 								@unless ($bundle['active'])
-									<form action="{{ route('settings.templates.activate-version', $bundle['version']) }}" method="POST">
+									<form action="{{ route('settings.templates.activate-version', $bundle['bundled'] ? \App\Services\Templates\TemplateDownloadService::BUNDLED : $bundle['version']) }}" method="POST">
 										@csrf
 										<button class="btn btn-sm"><x-action-content icon="fa-solid fa-rotate-left" label="Activate" /></button>
 									</form>
