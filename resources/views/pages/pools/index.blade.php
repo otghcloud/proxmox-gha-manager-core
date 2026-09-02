@@ -1,7 +1,7 @@
 @extends('layouts.admin-base-datatable')
 
 @section('meta-page-title', 'Pools')
-@section('page-pretitle', 'Configuration')
+@section('page-pretitle', 'Images')
 @section('page-title', 'Pools')
 @section('page-table-description', 'A queued job matches a pool when every label it asks for appears here.')
 

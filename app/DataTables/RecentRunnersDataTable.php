@@ -47,6 +47,7 @@ class RecentRunnersDataTable extends DataTable
             ->columns($this->getColumns())
             ->minifiedAjax(route('dashboard.recent-runners'))
             ->setTableAttribute('data-auto-refresh', '15')
+            ->pageLength(10)
             ->orderBy(3, 'desc')
             ->responsive(true)
             ->serverSide(true);
@@ -61,7 +62,7 @@ class RecentRunnersDataTable extends DataTable
             Column::make('runner_name')->title('Runner'),
             Column::computed('pool')->title('Pool'),
             Column::make('state')->width(100),
-            Column::make('updated_at')->title('Finished')->width(120)->searchable(false),
+            Column::make('updated_at')->title('Finished')->width(150)->searchable(false),
         ];
     }
 

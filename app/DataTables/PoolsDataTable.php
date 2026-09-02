@@ -68,8 +68,8 @@ class PoolsDataTable extends DataTable
             Column::computed('environment'),
             Column::computed('template'),
             Column::computed('labels')->searchable(false),
-            Column::computed('capacity')->width(100),
-            Column::computed('status')->width(110),
+            Column::computed('capacity')->width(140),
+            Column::computed('status')->width(100),
             Column::computed('actions')->width(80)->addClass('text-end'),
         ];
     }

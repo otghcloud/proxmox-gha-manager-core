@@ -1,7 +1,7 @@
 @extends('layouts.admin-base-datatable')
 
 @section('meta-page-title', 'Runners')
-@section('page-pretitle', 'Activity')
+@section('page-pretitle', 'Workflows')
 @section('page-title', 'Runners')
 @section('page-table-description', 'Every runner VM this installation has provisioned.')
 
