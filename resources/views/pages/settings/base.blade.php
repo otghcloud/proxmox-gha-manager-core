@@ -22,19 +22,16 @@
 								<a class="list-group-item list-group-item-action{{ request()->routeIs('settings.application*') ? ' active' : '' }}" href="{{ route('settings.application') }}">Application</a>
 							</div>
 
-							<h4 class="subheader">Jobs</h4>
-							<div class="list-group list-group-transparent mb-3">
-								<a class="list-group-item list-group-item-action{{ request()->routeIs('settings.jobs*') ? ' active' : '' }}" href="{{ route('settings.jobs.index') }}">Jobs</a>
-							</div>
-
-							<h4 class="subheader">Runners</h4>
-							<div class="list-group list-group-transparent mb-3">
-								<a class="list-group-item list-group-item-action{{ request()->routeIs('settings.runners*') ? ' active' : '' }}" href="{{ route('settings.runners.index') }}">Runners</a>
-							</div>
-
 							<h4 class="subheader">Templates</h4>
 							<div class="list-group list-group-transparent mb-3">
-								<a class="list-group-item list-group-item-action{{ request()->routeIs('settings.templates*') ? ' active' : '' }}" href="{{ route('settings.templates.index') }}">Templates</a>
+								<a class="list-group-item list-group-item-action{{ request()->routeIs('settings.templates.index') ? ' active' : '' }}" href="{{ route('settings.templates.index') }}">General</a>
+								<a class="list-group-item list-group-item-action{{ request()->routeIs('settings.templates.retention*') ? ' active' : '' }}" href="{{ route('settings.templates.retention') }}">Retention</a>
+							</div>
+
+							<h4 class="subheader">Workflows</h4>
+							<div class="list-group list-group-transparent mb-3">
+								<a class="list-group-item list-group-item-action{{ request()->routeIs('settings.jobs*') ? ' active' : '' }}" href="{{ route('settings.jobs.index') }}">Jobs</a>
+								<a class="list-group-item list-group-item-action{{ request()->routeIs('settings.runners*') ? ' active' : '' }}" href="{{ route('settings.runners.index') }}">Runners</a>
 							</div>
 
 							<h4 class="subheader">Administration</h4>

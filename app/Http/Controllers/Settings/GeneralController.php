@@ -3,6 +3,11 @@
 namespace App\Http\Controllers\Settings;
 
 use App\Http\Controllers\Controller;
+use App\Models\Pool;
+use App\Models\ProxmoxTarget;
+use App\Models\Runner;
+use App\Models\WorkflowJob;
+use App\Services\Builds\Packer\TemplateCatalog;
 use App\Services\SettingsRepository;
 use Illuminate\Http\RedirectResponse;
 use Illuminate\Http\Request;
@@ -13,10 +18,15 @@ class GeneralController extends Controller
 {
     public function __construct(private readonly SettingsRepository $settings) {}
 
-    public function overview(): View
+    public function overview(TemplateCatalog $catalog): View
     {
         return view('pages.settings.overview', [
             'settings' => $this->settings->all(),
+            'templatesVersion' => $catalog->imageBuilderVersion(),
+            'nodeCount' => ProxmoxTarget::count(),
+            'poolCount' => Pool::count(),
+            'runnerCount' => Runner::count(),
+            'jobCount' => WorkflowJob::count(),
         ]);
     }
 

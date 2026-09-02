@@ -105,6 +105,16 @@ class TemplateCatalog
     }
 
     /**
+     * The aggregate version of the currently active template bundle, whether downloaded or baked in.
+     */
+    public function imageBuilderVersion(): ?string
+    {
+        $version = $this->catalog()['image_builder_version'] ?? null;
+
+        return is_string($version) && $version !== '' ? $version : null;
+    }
+
+    /**
      * @return array<string, mixed>
      */
     private function catalog(): array
