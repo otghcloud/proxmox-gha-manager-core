@@ -67,7 +67,8 @@
 							</a>
 						</div>
 					</li>
-
+				</ul>
+				<ul class="navbar-nav ms-auto">
 					<li class="nav-item{{ nav_active('settings*') }}">
 						<a class="nav-link" href="{{ route('settings.overview') }}">
 							<span class="nav-link-icon d-md-none d-lg-inline-block">
