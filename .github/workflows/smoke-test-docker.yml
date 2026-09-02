@@ -8,7 +8,7 @@ permissions:
 
 jobs:
   smoke:
-    name: Boot and configure manager
+    name: smoke:docker
     runs-on: ['self-hosted', 'ubuntu-latest']
     steps:
       - name: Check out code

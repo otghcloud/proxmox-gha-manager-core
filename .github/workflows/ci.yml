@@ -13,7 +13,7 @@ permissions:
 
 jobs:
   lint-and-test:
-    name: lint:test
+    name: ci:lint-test
     runs-on: ['self-hosted', 'ubuntu-latest']
     steps:
       - uses: actions/checkout@v7
@@ -43,7 +43,7 @@ jobs:
         run: php artisan test
 
   build-assets:
-    name: build:assets
+    name: ci:build-assets
     runs-on: ['self-hosted', 'ubuntu-latest']
     steps:
       - uses: actions/checkout@v7
