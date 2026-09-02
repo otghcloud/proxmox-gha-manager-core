@@ -87,7 +87,8 @@ RUN chmod +x /usr/local/bin/entrypoint.sh \
 ENV IMAGE_BUILDER_PATH=/opt/image-builder \
     BUILD_LOG_DIRECTORY=/data/builds \
     BUILD_WORKING_DIRECTORY=/data \
-    RUNNER_IMAGES_PATH=/data/runner-images
+    RUNNER_IMAGES_PATH=/data/runner-images \
+    TEMPLATES_INSTALL_PATH=/data/templates
 
 # Holds the SQLite database, the generated APP_KEY, build logs and any fetched runner-images trees.
 VOLUME ["/data"]

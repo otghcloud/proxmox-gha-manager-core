@@ -35,6 +35,18 @@ class SettingsRepository
 
     public const TEMPLATE_UPDATES_AVAILABLE = 'template_updates_available';
 
+    public const TEMPLATE_AUTO_DOWNLOAD_ENABLED = 'template_auto_download_enabled';
+
+    public const TEMPLATE_AUTO_BUILD_ENABLED = 'template_auto_build_enabled';
+
+    /** Retention for downloaded template bundles on disk, distinct from the Proxmox VM template retention above. */
+    public const TEMPLATE_BUNDLE_RETENTION_MODE = 'template_bundle_retention_mode';
+
+    public const TEMPLATE_BUNDLE_RETENTION_GENERATIONS = 'template_bundle_retention_generations';
+
+    /** The version directory under templates_install_path currently in use, or null if none downloaded yet. */
+    public const TEMPLATE_ACTIVE_VERSION = 'template_active_version';
+
     public const RUNNER_NAME_PREFIX = 'runner_name_prefix';
 
     public function templateAutoCheckEnabled(): bool
@@ -69,6 +81,28 @@ class SettingsRepository
     public function templateRetentionGenerations(): int
     {
         return max(0, (int) $this->get(self::TEMPLATE_RETENTION_GENERATIONS, 1));
+    }
+
+    public function templateAutoDownloadEnabled(): bool
+    {
+        return $this->bool(self::TEMPLATE_AUTO_DOWNLOAD_ENABLED, false);
+    }
+
+    public function templateAutoBuildEnabled(): bool
+    {
+        return $this->bool(self::TEMPLATE_AUTO_BUILD_ENABLED, false);
+    }
+
+    public function templateBundleRetentionMode(): string
+    {
+        return $this->get(self::TEMPLATE_BUNDLE_RETENTION_MODE) === self::RETENTION_KEEP_LAST_N
+            ? self::RETENTION_KEEP_LAST_N
+            : self::RETENTION_AUTO;
+    }
+
+    public function templateBundleRetentionGenerations(): int
+    {
+        return max(0, (int) $this->get(self::TEMPLATE_BUNDLE_RETENTION_GENERATIONS, 1));
     }
 
     public function get(string $key, mixed $default = null): mixed

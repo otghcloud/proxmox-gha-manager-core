@@ -4,6 +4,12 @@ return [
 
     'image_builder_path' => env('IMAGE_BUILDER_PATH', dirname(base_path()).'/proxmox-gha-manager-templates'),
 
+    // Where downloaded template updates are installed, versioned by directory name. Preferred
+    // over image_builder_path when a version has been activated (see TemplateCatalog::root()).
+    'templates_install_path' => env('TEMPLATES_INSTALL_PATH', storage_path('app/templates')),
+
+    'templates_repository' => env('TEMPLATES_REPOSITORY', 'https://github.com/otghcloud/proxmox-gha-manager-templates'),
+
     'log_directory' => env('BUILD_LOG_DIRECTORY', storage_path('app/builds')),
 
     'working_directory' => env('BUILD_WORKING_DIRECTORY', storage_path('app')),

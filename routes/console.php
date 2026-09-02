@@ -31,3 +31,8 @@ Schedule::command('templates:check-updates')
     ->hourly()
     ->withoutOverlapping()
     ->runInBackground();
+
+Schedule::command('templates:prune-bundles')
+    ->hourly()
+    ->withoutOverlapping()
+    ->runInBackground();

@@ -103,6 +103,8 @@ Route::middleware('auth')->group(function (): void {
         Route::get('/templates', [TemplatesController::class, 'index'])->name('templates.index');
         Route::put('/templates', [TemplatesController::class, 'update'])->name('templates.update');
         Route::post('/templates/check-updates', [TemplatesController::class, 'checkUpdates'])->name('templates.check-updates');
+        Route::post('/templates/download-update', [TemplatesController::class, 'downloadUpdate'])->name('templates.download-update');
+        Route::post('/templates/versions/{version}/activate', [TemplatesController::class, 'activateVersion'])->name('templates.activate-version');
 
         Route::resource('users', UserController::class)->except(['show']);
 

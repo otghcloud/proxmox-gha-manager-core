@@ -20,7 +20,7 @@ class SshRunnerLauncher
      * and removed by the launch command before the runner starts — the same upload-then-execute
      * pattern aurora-manage uses for its remote scripts.
      */
-    public function launch(GitHubAccount $account, Pool $pool, string $host, string $encodedJitConfig): void
+    public function launch(GitHubAccount $account, Pool $pool, string $host, string $encodedJitConfig, string $runnerName): void
     {
         $ssh = new SshConnection(
             host: $host,
@@ -36,6 +36,8 @@ class SshRunnerLauncher
 
         // Temporary until the templates ship with the SSH user already in the docker group.
         $ssh->run('sudo -n usermod -aG docker '.escapeshellarg($account->linux_ssh_username));
+
+        $ssh->run('sudo -n hostnamectl set-hostname '.escapeshellarg($runnerName));
 
         $output = $ssh->run($this->launchCommand($directory));
 
