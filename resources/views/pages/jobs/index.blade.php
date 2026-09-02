@@ -1,7 +1,7 @@
 @extends('layouts.admin-base-datatable')
 
 @section('meta-page-title', 'Jobs')
-@section('page-pretitle', 'Activity')
+@section('page-pretitle', 'Workflows')
 @section('page-title', 'Jobs')
 @section('page-table-description', 'Every GitHub Actions job this installation has served.')
 

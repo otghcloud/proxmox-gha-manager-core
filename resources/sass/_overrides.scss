@@ -17,6 +17,11 @@ body {
     text-transform: capitalize;
 }
 
+// Tabler's default <hr> margin (2rem) is too much space between stacked dl sections in a card.
+.card-hr {
+    margin-block: 1rem;
+}
+
 .log-viewer {
     background: var(--tblr-dark);
     color: var(--tblr-light);

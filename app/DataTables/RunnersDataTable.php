@@ -96,11 +96,10 @@ class RunnersDataTable extends DataTable
             Column::make('runner_name')->title('Runner'),
             Column::computed('pool')->title('Pool'),
             Column::computed('node')->title('Node'),
-            Column::make('vmid')->title('VMID')->width(90),
             Column::computed('source')->width(110)->searchable(false),
             Column::make('workflow_job_id')->title('Job ID')->width(120),
             Column::make('state')->width(110),
-            Column::make('created_at')->title('Created')->width(140)->searchable(false),
+            Column::make('created_at')->title('Created')->width(160)->searchable(false),
             Column::computed('actions')->width(80)->addClass('text-end'),
         ];
     }

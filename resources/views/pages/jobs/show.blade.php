@@ -30,22 +30,6 @@
 					<div class="card-header"><h3 class="card-title">Details</h3></div>
 					<div class="card-body">
 						<dl class="row mb-0">
-							<dt class="col-5">Result</dt>
-							<dd class="col-7">
-								@if ($job->conclusion)
-									<span class="badge bg-{{ $job->conclusion->colour() }}-lt">{{ $job->conclusion->label() }}</span>
-								@else
-									<span class="badge bg-secondary-lt">{{ ucfirst(str_replace('_', ' ', $job->status)) }}</span>
-								@endif
-							</dd>
-							<dt class="col-5">Workflow</dt>
-							<dd class="col-7">{{ $job->workflow_name ?? '—' }}</dd>
-							<dt class="col-5">Repository</dt>
-							<dd class="col-7">{{ $job->repository_full_name }}</dd>
-							<dt class="col-5">Branch</dt>
-							<dd class="col-7">{{ $job->head_branch ?? '—' }}</dd>
-							<dt class="col-5">Commit</dt>
-							<dd class="col-7"><code>{{ $job->head_sha ? substr($job->head_sha, 0, 7) : '—' }}</code></dd>
 							<dt class="col-5">Environment</dt>
 							<dd class="col-7"><a href="{{ route('environments.show', $job->environment) }}">{{ $job->environment->name }}</a></dd>
 							<dt class="col-5">Runner</dt>
@@ -57,15 +41,72 @@
 								@endif
 							</dd>
 							<dt class="col-5">Node</dt>
-							<dd class="col-7">{{ $job->runner?->proxmoxTarget?->name ?? '—' }}</dd>
-							<dt class="col-5">Job ID</dt>
-							<dd class="col-7"><code>{{ $job->github_job_id }}</code></dd>
+							<dd class="col-7">
+								@if ($job->runner?->proxmoxTarget)
+									<a href="{{ route('nodes.show', $job->runner->proxmoxTarget) }}">{{ $job->runner->proxmoxTarget->name }}</a>
+								@else
+									—
+								@endif
+							</dd>
+						</dl>
+
+						<hr class="card-hr">
+
+						<dl class="row mb-0">
+							<dt class="col-5">Result</dt>
+							<dd class="col-7">
+								@if ($job->conclusion)
+									<span class="badge bg-{{ $job->conclusion->colour() }}-lt">{{ $job->conclusion->label() }}</span>
+								@else
+									<span class="badge bg-secondary-lt">{{ ucfirst(str_replace('_', ' ', $job->status)) }}</span>
+								@endif
+							</dd>
+							<dt class="col-5">Workflow</dt>
+							<dd class="col-7">{{ $job->workflow_name ?? '—' }}</dd>
+							<dt class="col-5">Repository</dt>
+							<dd class="col-7"><a href="https://github.com/{{ $job->repository_full_name }}" rel="noopener" target="_blank">{{ $job->repository_full_name }}</a></dd>
+							<dt class="col-5">Branch</dt>
+							<dd class="col-7">
+								@if ($job->head_branch)
+									<a href="https://github.com/{{ $job->repository_full_name }}/tree/{{ $job->head_branch }}" rel="noopener" target="_blank">{{ $job->head_branch }}</a>
+								@else
+									—
+								@endif
+							</dd>
+							<dt class="col-5">Commit</dt>
+							<dd class="col-7">
+								@if ($job->head_sha)
+									<a href="https://github.com/{{ $job->repository_full_name }}/commit/{{ $job->head_sha }}" rel="noopener" target="_blank">{{ substr($job->head_sha, 0, 7) }}</a>
+								@else
+									—
+								@endif
+							</dd>
 							<dt class="col-5">Run ID</dt>
-							<dd class="col-7"><code>{{ $job->github_run_id ?? '—' }}</code>@if ($job->run_attempt) <span class="text-secondary">attempt {{ $job->run_attempt }}</span>@endif</dd>
+							<dd class="col-7">
+								@if ($job->github_run_id)
+									<a href="https://github.com/{{ $job->repository_full_name }}/actions/runs/{{ $job->github_run_id }}" rel="noopener" target="_blank">{{ $job->github_run_id }}</a>
+								@else
+									—
+								@endif
+								@if ($job->run_attempt) <span class="text-secondary">attempt {{ $job->run_attempt }}</span>@endif
+							</dd>
+							<dt class="col-5">Job ID</dt>
+							<dd class="col-7">
+								@if ($job->github_job_id && $job->github_run_id)
+									<a href="https://github.com/{{ $job->repository_full_name }}/actions/runs/{{ $job->github_run_id }}/job/{{ $job->github_job_id }}" rel="noopener" target="_blank">{{ $job->github_job_id }}</a>
+								@else
+									{{ $job->github_job_id }}
+								@endif
+							</dd>
 							<dt class="col-5">Queue wait</dt>
 							<dd class="col-7">{{ \App\Helpers\DataTableHelpers::duration($job->queueWaitSeconds()) }}</dd>
 							<dt class="col-5">Duration</dt>
 							<dd class="col-7">{{ \App\Helpers\DataTableHelpers::duration($job->durationSeconds()) }}</dd>
+						</dl>
+
+						<hr class="card-hr">
+
+						<dl class="row mb-0">
 							<dt class="col-5">Started</dt>
 							<dd class="col-7">{{ $job->started_at?->forDisplay()->toDayDateTimeString() ?? '—' }}</dd>
 							<dt class="col-5">Completed</dt>

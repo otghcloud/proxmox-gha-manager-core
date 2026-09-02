@@ -1,7 +1,7 @@
 @extends('layouts.admin-base-datatable')
 
 @section('meta-page-title', 'Templates')
-@section('page-pretitle', 'Configuration')
+@section('page-pretitle', 'Images')
 @section('page-title', 'Templates')
 @section('page-table-description', 'Proxmox VM templates that runners are cloned from.')
 

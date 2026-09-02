@@ -46,6 +46,7 @@ class ActiveRunnersDataTable extends DataTable
             ->columns($this->getColumns())
             ->minifiedAjax(route('dashboard.active-runners'))
             ->setTableAttribute('data-auto-refresh', '15')
+            ->pageLength(10)
             ->orderBy(3, 'desc')
             ->responsive(true)
             ->serverSide(true);
@@ -60,7 +61,7 @@ class ActiveRunnersDataTable extends DataTable
             Column::make('runner_name')->title('Runner'),
             Column::computed('pool')->title('Pool'),
             Column::make('state')->width(100),
-            Column::make('created_at')->title('Created')->width(120)->searchable(false),
+            Column::make('created_at')->title('Created')->width(150)->searchable(false),
         ];
     }
 

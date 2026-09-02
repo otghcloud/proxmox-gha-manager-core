@@ -82,10 +82,10 @@ class WorkflowJobsDataTable extends DataTable
             Column::make('repository_full_name')->title('Repository'),
             Column::computed('environment'),
             Column::computed('runner')->title('Runner'),
-            Column::make('github_job_id')->title('Job ID')->width(120),
+            Column::make('github_job_id')->title('Job ID')->width(120)->visible(false),
             Column::computed('result')->width(110),
             Column::computed('duration')->width(100)->searchable(false),
-            Column::make('created_at')->title('Seen')->width(140)->searchable(false),
+            Column::make('created_at')->title('Seen')->width(150)->searchable(false),
             Column::computed('actions')->width(80)->addClass('text-end'),
         ];
     }

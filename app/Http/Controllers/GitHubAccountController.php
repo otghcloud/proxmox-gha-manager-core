@@ -2,6 +2,7 @@
 
 namespace App\Http\Controllers;
 
+use App\DataTables\GitHubAccountsDataTable;
 use App\Http\Requests\GitHubAccountRequest;
 use App\Models\GitHubAccount;
 use Illuminate\Http\RedirectResponse;
@@ -10,9 +11,9 @@ use Illuminate\View\View;
 
 class GitHubAccountController extends Controller
 {
-    public function index(): View
+    public function index(GitHubAccountsDataTable $dataTable): mixed
     {
-        return view('pages.github-accounts.index', ['accounts' => GitHubAccount::withCount('environments')->orderBy('login')->get()]);
+        return $dataTable->render('pages.github-accounts.index');
     }
 
     public function create(): View

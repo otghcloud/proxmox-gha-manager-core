@@ -16,6 +16,8 @@
 							<dd class="col-7">
 								<span class="badge bg-{{ $runner->state->colour() }}-lt runner-state">{{ $runner->state->label() }}</span>
 							</dd>
+							<dt class="col-5">Spawned</dt>
+							<dd class="col-7"><span class="badge bg-{{ $runner->spawn_reason->colour() }}-lt">{{ $runner->spawn_reason->label() }}</span></dd>
 							<dt class="col-5">Environment</dt>
 							<dd class="col-7"><a href="{{ route('environments.show', $runner->environment) }}">{{ $runner->environment->name }}</a></dd>
 							<dt class="col-5">Pool</dt>
@@ -32,19 +34,24 @@
 							<dd class="col-7">{{ $runner->ip_address ?? '—' }}</dd>
 							<dt class="col-5">GitHub runner</dt>
 							<dd class="col-7">{{ $runner->github_runner_id ?? '—' }}</dd>
-							<dt class="col-5">Spawned</dt>
-							<dd class="col-7"><span class="badge bg-{{ $runner->spawn_reason->colour() }}-lt">{{ $runner->spawn_reason->label() }}</span></dd>
-							<dt class="col-5">Job served</dt>
-							<dd class="col-7">
-								@if ($job)
+						</dl>
+
+						<hr class="card-hr">
+
+						@if ($job)
+							<dl class="row mb-0">
+								<dt class="col-5">Job served</dt>
+								<dd class="col-7">
 									<a href="{{ route('jobs.show', $job) }}">{{ $job->job_name }}</a>
-									<div class="text-secondary small">{{ $job->repository_full_name }}</div>
-								@else
-									{{ $runner->workflow_job_id ?? '—' }}
-								@endif
-							</dd>
-							<dt class="col-5">Repository</dt>
-							<dd class="col-7">{{ $runner->repository_full_name ?? '—' }}</dd>
+								</dd>
+								<dt class="col-5">Repository</dt>
+								<dd class="col-7"><a href="https://github.com/{{ $job->repository_full_name }}" rel="noopener" target="_blank">{{ $job->repository_full_name }}</a></dd>
+							</dl>
+
+							<hr class="card-hr">
+						@endif
+
+						<dl class="row mb-0">
 							<dt class="col-5">Lifetime</dt>
 							<dd class="col-7">{{ \App\Helpers\DataTableHelpers::duration($lifetimeSeconds) }}</dd>
 							<dt class="col-5">Created</dt>
@@ -54,7 +61,7 @@
 						</dl>
 
 						@if ($runner->failure_reason)
-							<hr>
+							<hr class="card-hr">
 							<x-alert type="danger">{{ $runner->failure_reason }}</x-alert>
 						@endif
 					</div>
