@@ -100,8 +100,10 @@ Route::middleware('auth')->group(function (): void {
         Route::get('/runners', [RunnersController::class, 'index'])->name('runners.index');
         Route::put('/runners', [RunnersController::class, 'update'])->name('runners.update');
 
-        Route::get('/templates', [TemplatesController::class, 'index'])->name('templates.index');
-        Route::put('/templates', [TemplatesController::class, 'update'])->name('templates.update');
+        Route::get('/templates/general', [TemplatesController::class, 'index'])->name('templates.index');
+        Route::put('/templates/general', [TemplatesController::class, 'update'])->name('templates.update');
+        Route::get('/templates/retention', [TemplatesController::class, 'retention'])->name('templates.retention');
+        Route::put('/templates/retention', [TemplatesController::class, 'updateRetention'])->name('templates.retention.update');
         Route::post('/templates/check-updates', [TemplatesController::class, 'checkUpdates'])->name('templates.check-updates');
         Route::post('/templates/download-update', [TemplatesController::class, 'downloadUpdate'])->name('templates.download-update');
         Route::post('/templates/versions/{version}/activate', [TemplatesController::class, 'activateVersion'])->name('templates.activate-version');
