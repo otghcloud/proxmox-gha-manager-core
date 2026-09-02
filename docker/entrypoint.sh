@@ -15,7 +15,7 @@ set_env() {
     fi
 }
 
-mkdir -p "${DATA_DIR}" "${DATA_DIR}/builds" "${DATA_DIR}/runner-images"
+mkdir -p "${DATA_DIR}" "${DATA_DIR}/builds" "${DATA_DIR}/runner-images" "${DATA_DIR}/templates"
 
 if [[ ! -f "${ENV_FILE}" ]]; then
     echo "Creating ${ENV_FILE} on first boot."

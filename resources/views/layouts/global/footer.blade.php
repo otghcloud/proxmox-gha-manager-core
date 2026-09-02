@@ -14,7 +14,10 @@
 						Copyright &copy; {{ date('Y') }} Aurora Technology (OTGH) Ltd
 					</li>
 					<li class="list-inline-item">
-						Proxmox GHA Manager {{ app_version() }}
+						Proxmox GHA Manager 
+					</li>
+					<li class="list-inline-item">
+						{{ app_version() }}
 					</li>
 				</ul>
 			</div>

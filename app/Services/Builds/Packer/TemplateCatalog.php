@@ -2,6 +2,8 @@
 
 namespace App\Services\Builds\Packer;
 
+use App\Services\SettingsRepository;
+
 /**
  * Reads the `templates.json` catalog published by proxmox-gha-manager-templates.
  */
@@ -12,9 +14,36 @@ class TemplateCatalog
         return $this->root().'/templates.json';
     }
 
+    /**
+     * The bundled image-builder path is baked into the container image at build time and is
+     * read-only; a downloaded update on the persistent volume takes priority once activated.
+     */
     public function root(): string
     {
+        $active = $this->activeVersion();
+
+        if (is_string($active) && $active !== '') {
+            $downloaded = rtrim((string) config('builds.templates_install_path'), '/').'/'.$active;
+
+            if (is_dir($downloaded)) {
+                return $downloaded;
+            }
+        }
+
         return rtrim((string) config('builds.image_builder_path'), '/');
+    }
+
+    /**
+     * Settings may be unreachable in contexts with no database (e.g. unit tests, early boot);
+     * fall back to the baked-in path rather than blowing up catalog resolution.
+     */
+    private function activeVersion(): ?string
+    {
+        try {
+            return app(SettingsRepository::class)->get(SettingsRepository::TEMPLATE_ACTIVE_VERSION);
+        } catch (\Throwable) {
+            return null;
+        }
     }
 
     public function entryForId(?string $id): ?TemplateCatalogEntry

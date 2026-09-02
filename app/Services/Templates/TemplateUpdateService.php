@@ -2,6 +2,7 @@
 
 namespace App\Services\Templates;
 
+use App\Services\Builds\Packer\TemplateCatalog;
 use App\Services\SettingsRepository;
 use Illuminate\Support\Facades\Http;
 use Illuminate\Support\Facades\Log;
@@ -35,7 +36,7 @@ class TemplateUpdateService
                 return ['available' => false, 'updates' => []];
             }
 
-            $localPath = rtrim(config('builds.image_builder_path'), '/').'/templates.json';
+            $localPath = (new TemplateCatalog)->root().'/templates.json';
             $localTemplates = [];
 
             if (file_exists($localPath)) {
@@ -98,7 +99,7 @@ class TemplateUpdateService
             return null;
         }
 
-        $localPath = rtrim(config('builds.image_builder_path'), '/').'/templates.json';
+        $localPath = (new TemplateCatalog)->root().'/templates.json';
         if (! file_exists($localPath) || ! is_readable($localPath)) {
             return null;
         }
@@ -126,7 +127,7 @@ class TemplateUpdateService
             return null;
         }
 
-        $path = rtrim(config('builds.image_builder_path'), '/').'/templates.json';
+        $path = (new TemplateCatalog)->root().'/templates.json';
         $catalog = is_readable($path) ? json_decode((string) file_get_contents($path), true) : null;
 
         foreach ($catalog['templates'] ?? [] as $entry) {

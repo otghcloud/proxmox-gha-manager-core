@@ -52,6 +52,18 @@
 				<input class="form-control" id="template_check_interval_hours" max="168" min="1" name="template_check_interval_hours" type="number" value="{{ old('template_check_interval_hours', $settings['template_check_interval_hours'] ?? 24) }}">
 				<small class="form-hint">Queries GitHub template index every X hours for version updates.</small>
 			</div>
+			<div class="mb-3">
+				<label class="form-check form-switch">
+					<input class="form-check-input" name="template_auto_download_enabled" type="checkbox" value="1" @checked(old('template_auto_download_enabled', $settings['template_auto_download_enabled'] ?? '0') == '1')>
+					<span class="form-check-label">Automatically download and activate updates once found</span>
+				</label>
+			</div>
+			<div class="mb-0">
+				<label class="form-check form-switch">
+					<input class="form-check-input" name="template_auto_build_enabled" type="checkbox" value="1" @checked(old('template_auto_build_enabled', $settings['template_auto_build_enabled'] ?? '0') == '1')>
+					<span class="form-check-label">Automatically rebuild templates after activating an update</span>
+				</label>
+			</div>
 
 			@if (! empty($settings[\App\Services\SettingsRepository::TEMPLATE_UPDATES_AVAILABLE]))
 				@php($updateData = json_decode($settings[\App\Services\SettingsRepository::TEMPLATE_UPDATES_AVAILABLE], true))
@@ -73,12 +85,72 @@
 				@endif
 			@endif
 		</div>
+		<hr class="my-0">
+		<div class="card-body">
+			<h3 class="card-title">Downloaded bundle retention</h3>
+			<p class="text-secondary small">
+				Controls how many downloaded template bundles are kept on disk for rollback. The active
+				bundle is never deleted.
+			</p>
+			<div class="mb-3" data-template-bundle-retention>
+				<label class="form-check">
+					<input class="form-check-input" name="template_bundle_retention_mode" type="radio" value="auto" @checked(old('template_bundle_retention_mode', $settings['template_bundle_retention_mode'] ?? 'auto') !== 'keep_last_n')>
+					<span class="form-check-label">Keep only the active bundle</span>
+				</label>
+				<label class="form-check">
+					<input class="form-check-input" name="template_bundle_retention_mode" type="radio" value="keep_last_n" @checked(old('template_bundle_retention_mode', $settings['template_bundle_retention_mode'] ?? 'auto') === 'keep_last_n')>
+					<span class="form-check-label">Keep the last few bundles for rollback</span>
+				</label>
+			</div>
+			<div class="mb-0">
+				<label class="form-label" for="template_bundle_retention_generations">Bundles to keep</label>
+				<input class="form-control" id="template_bundle_retention_generations" max="20" min="1" name="template_bundle_retention_generations" type="number" value="{{ old('template_bundle_retention_generations', $settings['template_bundle_retention_generations'] ?? 1) }}">
+				<small class="form-hint">Only used when keeping bundles. Older ones are pruned hourly.</small>
+			</div>
+		</div>
 		<div class="card-footer text-end">
 			<button class="btn btn-primary" type="submit">Save changes</button>
 		</div>
 	</form>
 
+	<div class="card mt-3">
+		<div class="card-header d-flex align-items-center justify-content-between">
+			<h3 class="card-title mb-0">Installed template bundles</h3>
+			<button class="btn btn-sm btn-outline-secondary" form="download-template-update-form" type="submit">
+				<x-action-content icon="fa-solid fa-download" label="Download now" />
+			</button>
+		</div>
+		<div class="table-responsive">
+			<table class="table card-table table-vcenter">
+				<thead><tr><th>Version</th><th>Downloaded</th><th>Status</th><th></th></tr></thead>
+				<tbody>
+					@forelse ($installedVersions as $bundle)
+						<tr>
+							<td>v{{ $bundle['version'] }}</td>
+							<td>{{ \Carbon\Carbon::createFromTimestamp($bundle['downloaded_at'])->diffForHumans() }}</td>
+							<td><span class="badge bg-{{ $bundle['active'] ? 'green' : 'secondary' }}-lt">{{ $bundle['active'] ? 'Active' : 'Installed' }}</span></td>
+							<td class="text-end">
+								@unless ($bundle['active'])
+									<form action="{{ route('settings.templates.activate-version', $bundle['version']) }}" method="POST">
+										@csrf
+										<button class="btn btn-sm"><x-action-content icon="fa-solid fa-rotate-left" label="Activate" /></button>
+									</form>
+								@endunless
+							</td>
+						</tr>
+					@empty
+						<tr><td colspan="4" class="text-secondary">No template bundles downloaded yet.</td></tr>
+					@endforelse
+				</tbody>
+			</table>
+		</div>
+	</div>
+
 	<form action="{{ route('settings.templates.check-updates') }}" id="check-template-updates-form" method="POST">
 		@csrf
 	</form>
+	<form action="{{ route('settings.templates.download-update') }}" id="download-template-update-form" method="POST">
+		@csrf
+	</form>
 @endsection
+

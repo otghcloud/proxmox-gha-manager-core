@@ -6,6 +6,7 @@ use App\Enums\RunnerState;
 use App\Jobs\ProvisionRunnerJob;
 use App\Models\Environment;
 use App\Models\GitHubAccount;
+use App\Models\Pool;
 use App\Models\ProxmoxTarget;
 use App\Models\Runner;
 use App\Models\WebhookDelivery;
@@ -15,6 +16,7 @@ use App\Services\WebhookSignature;
 use Illuminate\Http\JsonResponse;
 use Illuminate\Http\Request;
 use Illuminate\Support\Facades\Cache;
+use Illuminate\Support\Facades\DB;
 use Illuminate\Support\Facades\Log;
 
 class WebhookController extends Controller
@@ -121,6 +123,11 @@ class WebhookController extends Controller
             return 'duplicate';
         }
 
+        // A warm/idle runner can take this job as-is; GitHub will route it there without our help.
+        if ($this->reserveIdleRunner($pool, (int) $jobId)) {
+            return 'assigned to idle runner';
+        }
+
         // Check if we have any eligible targets before queuing the job
         $targetStatus = $this->checkTargetAvailability($environment, $pool);
         if ($targetStatus !== null) {
@@ -135,6 +142,32 @@ class WebhookController extends Controller
         );
 
         return 'queued';
+    }
+
+    /**
+     * Tag an unclaimed idle runner in the pool as the likely recipient of this job, so we don't
+     * spawn a redundant VM. Purely a heuristic: whichever runner GitHub actually hands the job to
+     * wins via WorkflowJobRecorder::assignRunner(), which releases this reservation if it guessed
+     * wrong.
+     */
+    private function reserveIdleRunner(Pool $pool, int $jobId): bool
+    {
+        return (bool) Cache::lock("pool-idle:{$pool->id}", 10)->block(5, fn () => DB::transaction(function () use ($pool, $jobId): bool {
+            $runner = Runner::where('pool_id', $pool->id)
+                ->where('state', RunnerState::Idle->value)
+                ->whereNull('workflow_job_id')
+                ->oldest('state_changed_at')
+                ->lockForUpdate()
+                ->first();
+
+            if ($runner === null) {
+                return false;
+            }
+
+            $runner->forceFill(['workflow_job_id' => $jobId])->save();
+
+            return true;
+        }));
     }
 
     /**
@@ -200,6 +233,15 @@ class WebhookController extends Controller
         $runnerName = $job['runner_name'] ?? null;
 
         if (! is_string($runnerName) || $runnerName === '') {
+            // A job can complete (e.g. cancelled) before GitHub ever assigns it a runner; release
+            // any idle-runner reservation we made for it so that runner is eligible again.
+            if ($state === RunnerState::Reaping && is_numeric($job['id'] ?? null)) {
+                Runner::whereHas('environment', fn ($query) => $query->where('github_account_id', $account->id))
+                    ->where('workflow_job_id', (int) $job['id'])
+                    ->where('state', RunnerState::Idle->value)
+                    ->update(['workflow_job_id' => null]);
+            }
+
             return 'not ours';
         }
 
