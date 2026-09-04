@@ -27,21 +27,39 @@ class RunnersReapCommand extends EnvironmentCommand
             return self::SUCCESS;
         }
 
-        $total = 0;
         $hasErrors = false;
+        $plan = [];
+        $plannedTotal = 0;
 
         foreach ($this->environments($all) as $environment) {
             foreach (ProxmoxTarget::query()->when(! $all, fn ($query) => $query->where('enabled', true))->orderBy('name')->get() as $target) {
                 try {
                     $reaper = $services->reaper($environment, $target);
-                    $destroyed = $all ? $reaper->destroyAll() : $reaper->runOnce();
-                    $total += $destroyed;
+                    $pending = $reaper->pendingCount($all);
+                    $plan[] = [$environment, $target, $reaper, $pending];
+                    $plannedTotal += $pending;
 
-                    $this->components->info("{$environment->slug}/{$target->slug}: destroyed {$destroyed} VM(s)");
+                    $this->components->info("{$environment->slug}/{$target->slug}: scheduled to destroy {$pending} VM(s)");
                 } catch (Throwable $e) {
-                    $this->components->error("{$environment->slug}/{$target->slug}: {$e->getMessage()}");
+                    $this->components->error("{$environment->slug}/{$target->slug}: preflight failed: {$e->getMessage()}");
                     $hasErrors = true;
                 }
+            }
+        }
+
+        $this->line("Preflight found {$plannedTotal} VM(s) to destroy across ".count($plan).' target(s).');
+
+        $total = 0;
+
+        foreach ($plan as [$environment, $target, $reaper]) {
+            try {
+                $destroyed = $all ? $reaper->destroyAll() : $reaper->runOnce();
+                $total += $destroyed;
+
+                $this->components->info("{$environment->slug}/{$target->slug}: destroyed {$destroyed} VM(s)");
+            } catch (Throwable $e) {
+                $this->components->error("{$environment->slug}/{$target->slug}: {$e->getMessage()}");
+                $hasErrors = true;
             }
         }
 

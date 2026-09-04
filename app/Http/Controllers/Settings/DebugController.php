@@ -20,7 +20,10 @@ use ZipArchive;
 
 class DebugController extends Controller
 {
-    /** Runners in these states are finished with and safe to purge from the history. */
+    /** Runners in these states are present in Runner History. */
+    private const HISTORY_STATES = [RunnerState::Reaping, RunnerState::Failed, RunnerState::Destroyed];
+
+    /** Runners in these states are finished with and safe to purge from history. */
     private const HISTORIC_STATES = [RunnerState::Destroyed, RunnerState::Failed];
 
     public function __construct(private readonly SettingsRepository $settings) {}
@@ -30,7 +33,8 @@ class DebugController extends Controller
         return view('pages.settings.debug', [
             'reapingEnabled' => $this->settings->bool(SettingsRepository::REAPING_ENABLED),
             'autoSpawnEnabled' => $this->settings->bool(SettingsRepository::AUTO_SPAWN_ENABLED),
-            'liveRunnerCount' => Runner::query()->whereNotIn('state', $this->historicStateValues())->count(),
+            'liveRunnerCount' => Runner::query()->whereIn('state', RunnerState::activeValues())->count(),
+            'runnerHistoryCount' => Runner::query()->whereIn('state', $this->historyStateValues())->count(),
             'historicRunnerCount' => Runner::query()->whereIn('state', $this->historicStateValues())->count(),
             'buildCount' => ImageBuild::query()->count(),
             'webhookDeliveryCount' => WebhookDelivery::query()->count(),
@@ -156,5 +160,13 @@ class DebugController extends Controller
     private function historicStateValues(): array
     {
         return array_map(fn (RunnerState $state): string => $state->value, self::HISTORIC_STATES);
+    }
+
+    /**
+     * @return array<int, string>
+     */
+    private function historyStateValues(): array
+    {
+        return array_map(fn (RunnerState $state): string => $state->value, self::HISTORY_STATES);
     }
 }

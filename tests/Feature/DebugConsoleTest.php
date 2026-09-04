@@ -68,6 +68,16 @@ class DebugConsoleTest extends TestCase
         $this->get(route('settings.debug.index'))->assertOk()->assertSee('Debug');
     }
 
+    public function test_debug_page_counts_reaping_runners_as_history(): void
+    {
+        $this->runner(901, RunnerState::Reaping);
+
+        $this->get(route('settings.debug.index'))
+            ->assertOk()
+            ->assertSee('1 runner history record(s)')
+            ->assertSee('0 destroyed and failed record(s) can be cleared');
+    }
+
     public function test_export_config_downloads_zip_archive(): void
     {
         $response = $this->get(route('settings.debug.export-config'));
