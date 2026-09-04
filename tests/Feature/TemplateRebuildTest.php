@@ -14,12 +14,11 @@ use App\Models\ProxmoxTarget;
 use App\Models\RetiredTemplateVmid;
 use App\Models\Runner;
 use App\Models\RunnerTemplate;
-use App\Services\Builds\ImageBuilder;
 use App\Services\Builds\TemplateRebuilder;
-use App\Services\Proxmox\ProxmoxClient;
 use App\Services\SettingsRepository;
 use Illuminate\Foundation\Testing\RefreshDatabase;
 use Illuminate\Support\Facades\Queue;
+use OTGH\ProxmoxGHA\Packer\PackerBuilder;
 use ReflectionMethod;
 use Tests\TestCase;
 
@@ -165,7 +164,6 @@ class TemplateRebuildTest extends TestCase
     public function test_the_template_vm_is_named_after_the_template(): void
     {
         $this->assertSame('tpl-ubuntu-slim', $this->template->vmName());
-
         $this->template->update(['name' => 'Ubuntu 24.04']);
 
         $this->assertSame('tpl-ubuntu-2404', $this->template->fresh()->vmName());
@@ -187,8 +185,8 @@ class TemplateRebuildTest extends TestCase
         $build = $this->makeBuild(806);
         $build->load(['environment.githubAccount', 'runnerTemplate', 'proxmoxTarget']);
 
-        $method = new ReflectionMethod(ImageBuilder::class, 'environmentVariables');
-        $variables = $method->invoke(new ImageBuilder($this->createMock(ProxmoxClient::class)), $build);
+        $method = new ReflectionMethod(PackerBuilder::class, 'environmentVariables');
+        $variables = $method->invoke(new PackerBuilder, $build);
 
         $this->assertSame('806', $variables['PKR_VAR_pmx_template_vmid']);
         $this->assertSame('tpl-ubuntu-slim', $variables['PKR_VAR_pmx_template_name']);
@@ -215,8 +213,8 @@ class TemplateRebuildTest extends TestCase
         $build = $this->makeBuild(806);
         $build->load(['environment.githubAccount', 'runnerTemplate', 'proxmoxTarget']);
 
-        $method = new ReflectionMethod(ImageBuilder::class, 'environmentVariables');
-        $variables = $method->invoke(new ImageBuilder($this->createMock(ProxmoxClient::class)), $build);
+        $method = new ReflectionMethod(PackerBuilder::class, 'environmentVariables');
+        $variables = $method->invoke(new PackerBuilder, $build);
 
         // Proxmox rejects `tag=0`, so the variable has to be absent rather than zero.
         $this->assertArrayNotHasKey('PKR_VAR_pmx_vlan_tag', $variables);
@@ -237,8 +235,8 @@ class TemplateRebuildTest extends TestCase
         $build = $this->makeBuild(806);
         $build->load(['environment.githubAccount', 'runnerTemplate', 'proxmoxTarget']);
 
-        $method = new ReflectionMethod(ImageBuilder::class, 'environmentVariables');
-        $variables = $method->invoke(new ImageBuilder($this->createMock(ProxmoxClient::class)), $build);
+        $method = new ReflectionMethod(PackerBuilder::class, 'environmentVariables');
+        $variables = $method->invoke(new PackerBuilder, $build);
 
         $this->assertSame('8', $variables['PKR_VAR_build_cpu_cores']);
         $this->assertSame('16384', $variables['PKR_VAR_build_memory_mb']);
@@ -256,8 +254,8 @@ class TemplateRebuildTest extends TestCase
         $build = $this->makeBuild(806);
         $build->load(['environment.githubAccount', 'runnerTemplate', 'proxmoxTarget']);
 
-        $method = new ReflectionMethod(ImageBuilder::class, 'environmentVariables');
-        $variables = $method->invoke(new ImageBuilder($this->createMock(ProxmoxClient::class)), $build);
+        $method = new ReflectionMethod(PackerBuilder::class, 'environmentVariables');
+        $variables = $method->invoke(new PackerBuilder, $build);
 
         $this->assertArrayNotHasKey('PKR_VAR_build_cpu_cores', $variables);
         $this->assertArrayNotHasKey('PKR_VAR_build_memory_mb', $variables);

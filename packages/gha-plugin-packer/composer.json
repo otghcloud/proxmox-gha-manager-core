@@ -1,0 +1,23 @@
+{
+    "name": "otghcloud/gha-plugin-packer",
+    "version": "0.1.0",
+    "description": "Packer builder plugin for Proxmox GHA Manager",
+    "type": "library",
+    "license": "MIT",
+    "require": {
+        "php": "^8.3",
+        "laravel/framework": "^13.17"
+    },
+    "autoload": {
+        "psr-4": {
+            "OTGH\\ProxmoxGHA\\Packer\\": "src/"
+        }
+    },
+    "extra": {
+        "laravel": {
+            "providers": [
+                "OTGH\\ProxmoxGHA\\Packer\\PackerServiceProvider"
+            ]
+        }
+    }
+}

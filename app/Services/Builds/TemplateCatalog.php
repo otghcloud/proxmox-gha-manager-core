@@ -1,12 +1,9 @@
 <?php
 
-namespace App\Services\Builds\Packer;
+namespace App\Services\Builds;
 
 use App\Services\SettingsRepository;
 
-/**
- * Reads the `templates.json` catalog published by proxmox-gha-manager-templates.
- */
 class TemplateCatalog
 {
     public function path(): string
@@ -14,10 +11,6 @@ class TemplateCatalog
         return $this->root().'/templates.json';
     }
 
-    /**
-     * The bundled image-builder path is baked into the container image at build time and is
-     * read-only; a downloaded update on the persistent volume takes priority once activated.
-     */
     public function root(): string
     {
         $active = $this->activeVersion();
@@ -33,10 +26,6 @@ class TemplateCatalog
         return rtrim((string) config('builds.image_builder_path'), '/');
     }
 
-    /**
-     * Settings may be unreachable in contexts with no database (e.g. unit tests, early boot);
-     * fall back to the baked-in path rather than blowing up catalog resolution.
-     */
     private function activeVersion(): ?string
     {
         try {
@@ -46,22 +35,18 @@ class TemplateCatalog
         }
     }
 
-    public function entryForId(?string $id): ?TemplateCatalogEntry
+    public function entryForId(?string $id, ?string $builder = null): ?TemplateCatalogEntry
     {
         foreach ($this->templates() as $entry) {
             if (($entry['id'] ?? null) === $id) {
-                return new TemplateCatalogEntry($entry);
+                return new TemplateCatalogEntry($entry, $builder);
             }
         }
 
         return null;
     }
 
-    /**
-     * The template metadata published with the installed image-builder bundle.
-     *
-     * @return array<int, array<string, mixed>>
-     */
+    /** @return array<int, array<string, mixed>> */
     public function templates(): array
     {
         return array_values(array_map(
@@ -73,9 +58,6 @@ class TemplateCatalog
         ));
     }
 
-    /**
-     * The absolute directory holding the builder's files, or null when it is not installed.
-     */
     public function templateDirectory(TemplateCatalogEntry $entry): ?string
     {
         $directory = $this->root().'/'.trim($entry->builderPath(), '/');
@@ -83,11 +65,7 @@ class TemplateCatalog
         return is_dir($directory) ? $directory : null;
     }
 
-    /**
-     * The builder's stage manifest, which drives build progress reporting.
-     *
-     * @return array<string, mixed>
-     */
+    /** @return array<string, mixed> */
     public function buildManifest(TemplateCatalogEntry $entry): array
     {
         $path = $this->root().'/'.ltrim($entry->buildManifestPath(), '/');
@@ -101,9 +79,6 @@ class TemplateCatalog
         return is_array($manifest) ? $manifest : [];
     }
 
-    /**
-     * The upstream actions/runner-images commit these templates were generated against.
-     */
     public function runnerImagesCommit(): ?string
     {
         $commit = $this->catalog()['runner_images_commit'] ?? null;
@@ -111,9 +86,6 @@ class TemplateCatalog
         return is_string($commit) && preg_match('/^[0-9a-f]{40}$/', $commit) === 1 ? $commit : null;
     }
 
-    /**
-     * The aggregate version of the currently active template bundle, whether downloaded or baked in.
-     */
     public function imageBuilderVersion(): ?string
     {
         $version = $this->catalog()['image_builder_version'] ?? null;
@@ -121,9 +93,7 @@ class TemplateCatalog
         return is_string($version) && $version !== '' ? $version : null;
     }
 
-    /**
-     * @return array<string, mixed>
-     */
+    /** @return array<string, mixed> */
     private function catalog(): array
     {
         $path = $this->path();
@@ -137,9 +107,7 @@ class TemplateCatalog
         return is_array($catalog) ? $catalog : [];
     }
 
-    /** @param array<string, mixed> $entry
-     * @return array<string, mixed>
-     */
+    /** @param array<string, mixed> $entry @return array<string, mixed> */
     private function hydrate(array $entry): array
     {
         $path = $entry['template_json_path'] ?? null;

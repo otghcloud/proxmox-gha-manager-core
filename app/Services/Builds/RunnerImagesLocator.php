@@ -1,17 +1,10 @@
 <?php
 
-namespace App\Services\Builds\Packer;
+namespace App\Services\Builds;
 
 use App\Exceptions\ProvisioningException;
 use Symfony\Component\Process\Process;
 
-/**
- * Resolves the actions/runner-images build scripts a Packer template provisions from.
- *
- * The templates default to a `vendor/runner-images` tree beside them. When the installed
- * catalog does not carry one, the commit it was generated against is fetched on demand and
- * cached, so an image build always matches the templates that requested it.
- */
 class RunnerImagesLocator
 {
     private const FETCH_TIMEOUT_SECONDS = 1800;
@@ -20,9 +13,6 @@ class RunnerImagesLocator
         private readonly TemplateCatalog $catalog = new TemplateCatalog,
     ) {}
 
-    /**
-     * The scripts root to override the template default with, or null when the bundled tree is usable.
-     */
     public function scriptsRoot(TemplateCatalogEntry $template): ?string
     {
         if (! $template->requiresScriptsRoot()) {
@@ -36,9 +26,7 @@ class RunnerImagesLocator
         $commit = $this->catalog->runnerImagesCommit();
 
         if ($commit === null) {
-            throw new ProvisioningException(
-                'The installed templates bundle no runner-images tree and record no runner_images_commit to fetch.'
-            );
+            throw new ProvisioningException('The installed templates bundle has no runner-images tree and records no runner_images_commit to fetch.');
         }
 
         $checkout = rtrim((string) config('builds.runner_images_path'), '/').'/'.$commit;
@@ -60,9 +48,6 @@ class RunnerImagesLocator
         return $this->catalog->root().'/vendor/runner-images/'.$template->runnerImagesDirectory();
     }
 
-    /**
-     * Sparse, single-commit fetch: the full history is hundreds of megabytes and none of it is needed.
-     */
     private function fetch(string $checkout, string $commit, string $directory): void
     {
         if (! is_dir($checkout) && ! mkdir($checkout, 0750, true) && ! is_dir($checkout)) {
@@ -70,7 +55,6 @@ class RunnerImagesLocator
         }
 
         $repository = (string) config('builds.runner_images_repository');
-
         $steps = [
             ['git', 'init', '-q'],
             ['git', 'config', 'remote.origin.url', $repository],
@@ -84,9 +68,7 @@ class RunnerImagesLocator
             $process->run();
 
             if (! $process->isSuccessful()) {
-                throw new ProvisioningException(
-                    'Fetching runner-images at '.$commit.' failed: '.trim($process->getErrorOutput() ?: $process->getOutput())
-                );
+                throw new ProvisioningException('Fetching runner-images at '.$commit.' failed: '.trim($process->getErrorOutput() ?: $process->getOutput()));
             }
         }
     }

@@ -2,7 +2,7 @@
 
 namespace App\Services\Templates;
 
-use App\Services\Builds\Packer\TemplateCatalog;
+use App\Services\Builds\TemplateCatalog;
 use App\Services\SettingsRepository;
 use Illuminate\Support\Facades\Http;
 use Illuminate\Support\Facades\Log;

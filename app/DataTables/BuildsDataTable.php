@@ -4,7 +4,7 @@ namespace App\DataTables;
 
 use App\Helpers\DataTableHelpers;
 use App\Models\ImageBuild;
-use App\Services\Builds\Packer\TemplateCatalog;
+use App\Services\Builds\TemplateCatalog;
 use Illuminate\Database\Eloquent\Builder as QueryBuilder;
 use Yajra\DataTables\EloquentDataTable;
 use Yajra\DataTables\Html\Builder as HtmlBuilder;

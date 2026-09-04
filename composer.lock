@@ -4,7 +4,7 @@
         "Read more about it at https://getcomposer.org/doc/01-basic-usage.md#installing-dependencies",
         "This file is @generated automatically"
     ],
-    "content-hash": "db8eeb56c08fc23145824b37909afcac",
+    "content-hash": "c061e7242e76a4fa8a4c12b6ee520f72",
     "packages": [
         {
             "name": "brick/math",
@@ -2614,6 +2614,108 @@
                 }
             ],
             "time": "2026-02-16T23:10:27+00:00"
+        },
+        {
+            "name": "otghcloud/gha-plugin-cloudimg",
+            "version": "0.1.0",
+            "dist": {
+                "type": "path",
+                "url": "packages/gha-plugin-cloudimg",
+                "reference": "67c4fa604ae2977a2b90832b985160729371e561"
+            },
+            "require": {
+                "laravel/framework": "^13.17",
+                "php": "^8.3"
+            },
+            "type": "library",
+            "extra": {
+                "laravel": {
+                    "providers": [
+                        "OTGH\\ProxmoxGHA\\Cloudimg\\CloudimgServiceProvider"
+                    ]
+                }
+            },
+            "autoload": {
+                "psr-4": {
+                    "OTGH\\ProxmoxGHA\\Cloudimg\\": "src/"
+                }
+            },
+            "license": [
+                "MIT"
+            ],
+            "description": "Cloud image builder plugin for Proxmox GHA Manager",
+            "transport-options": {
+                "symlink": true,
+                "relative": true
+            }
+        },
+        {
+            "name": "otghcloud/gha-plugin-packer",
+            "version": "0.1.0",
+            "dist": {
+                "type": "path",
+                "url": "packages/gha-plugin-packer",
+                "reference": "c6fe80cb2ca6398dcaba0fa13c1085e0101574ca"
+            },
+            "require": {
+                "laravel/framework": "^13.17",
+                "php": "^8.3"
+            },
+            "type": "library",
+            "extra": {
+                "laravel": {
+                    "providers": [
+                        "OTGH\\ProxmoxGHA\\Packer\\PackerServiceProvider"
+                    ]
+                }
+            },
+            "autoload": {
+                "psr-4": {
+                    "OTGH\\ProxmoxGHA\\Packer\\": "src/"
+                }
+            },
+            "license": [
+                "MIT"
+            ],
+            "description": "Packer builder plugin for Proxmox GHA Manager",
+            "transport-options": {
+                "symlink": true,
+                "relative": true
+            }
+        },
+        {
+            "name": "otghcloud/gha-plugin-prebuilt",
+            "version": "0.1.0",
+            "dist": {
+                "type": "path",
+                "url": "packages/gha-plugin-prebuilt",
+                "reference": "5020563a5633d4e188bfac135ab3aead87d2072e"
+            },
+            "require": {
+                "laravel/framework": "^13.17",
+                "php": "^8.3"
+            },
+            "type": "library",
+            "extra": {
+                "laravel": {
+                    "providers": [
+                        "OTGH\\ProxmoxGHA\\Prebuilt\\PrebuiltServiceProvider"
+                    ]
+                }
+            },
+            "autoload": {
+                "psr-4": {
+                    "OTGH\\ProxmoxGHA\\Prebuilt\\": "src/"
+                }
+            },
+            "license": [
+                "MIT"
+            ],
+            "description": "Prebuilt artifact importer plugin for Proxmox GHA Manager",
+            "transport-options": {
+                "symlink": true,
+                "relative": true
+            }
         },
         {
             "name": "paragonie/constant_time_encoding",

@@ -4,7 +4,6 @@ namespace App\Services\Builds;
 
 use App\Enums\BuildStatus;
 use App\Models\ImageBuild;
-use App\Services\Builds\Packer\TemplateCatalog;
 
 class BuildProgress
 {

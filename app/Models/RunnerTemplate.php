@@ -4,7 +4,7 @@ namespace App\Models;
 
 use App\Enums\PoolOs;
 use App\Models\Concerns\HasBreadcrumbLabel;
-use App\Services\Builds\Packer\TemplateCatalog;
+use App\Services\Builds\TemplateCatalog;
 use Illuminate\Database\Eloquent\Collection;
 use Illuminate\Database\Eloquent\Factories\HasFactory;
 use Illuminate\Database\Eloquent\Model;

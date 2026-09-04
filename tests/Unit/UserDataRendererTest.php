@@ -3,7 +3,7 @@
 namespace Tests\Unit;
 
 use App\Exceptions\ProvisioningException;
-use App\Services\Builds\Packer\UserDataRenderer;
+use OTGH\ProxmoxGHA\Packer\UserDataRenderer;
 use Tests\TestCase;
 
 class UserDataRendererTest extends TestCase

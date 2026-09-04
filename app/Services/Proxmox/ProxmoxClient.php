@@ -145,6 +145,14 @@ class ProxmoxClient
      */
     public function downloadIso(string $storage, string $url): string
     {
+        return $this->downloadImage($storage, $url);
+    }
+
+    /**
+     * Download an image artifact to node storage and return its volume ID.
+     */
+    public function downloadImage(string $storage, string $url): string
+    {
         $filename = basename((string) parse_url($url, PHP_URL_PATH));
 
         if ($filename === '' || $filename === '.' || $filename === '/') {
@@ -184,6 +192,96 @@ class ProxmoxClient
         $upid = $this->post("/nodes/{$this->node()}/qemu/{$templateVmid}/clone", $payload);
 
         $this->awaitTask($upid, "clone {$templateVmid} -> {$vmid}");
+    }
+
+    /**
+     * Create the empty VM shell used before importing a cloud image.
+     */
+    public function createCloudImageVm(
+        int $vmid,
+        string $name,
+        int $cores,
+        int $memory,
+        string $networkAdapter,
+    ): void {
+        $upid = $this->post('/nodes/'.$this->node().'/qemu', [
+            'vmid' => $vmid,
+            'name' => $name,
+            'memory' => $memory,
+            'cores' => $cores,
+            'sockets' => 1,
+            'cpu' => 'host',
+            'net0' => $networkAdapter,
+            'ostype' => 'l26',
+            'machine' => 'q35',
+            'scsihw' => 'virtio-scsi-pci',
+            'onboot' => 0,
+            'agent' => 1,
+        ]);
+
+        $this->awaitTask($upid, "create cloud image VM {$vmid}");
+    }
+
+    /**
+     * Import a cloud image into a SCSI disk and attach the cloud-init drive.
+     *
+     * The source must be a path or volume visible to the Proxmox node, matching
+     * the `import-from` value accepted by the Proxmox API.
+     */
+    public function importCloudImage(int $vmid, string $storage, string $source): void
+    {
+        $this->put('/nodes/'.$this->node().'/qemu/'.$vmid.'/config', [
+            'scsi0' => sprintf('%s:0,import-from=%s,discard=on,ssd=1', $storage, $source),
+            'ide2' => $storage.':cloudinit',
+        ]);
+    }
+
+    public function resizeCloudImageDisk(int $vmid, string $size): void
+    {
+        $upid = $this->putReturningTask('/nodes/'.$this->node().'/qemu/'.$vmid.'/resize', [
+            'disk' => 'scsi0',
+            'size' => $size,
+        ]);
+
+        if ($upid !== null) {
+            $this->awaitTask($upid, "resize cloud image VM {$vmid}");
+        }
+    }
+
+    /**
+     * Configure credentials and networking before the first cloud-init boot.
+     */
+    public function configureCloudInit(
+        int $vmid,
+        string $username,
+        ?string $password,
+        ?string $publicKey,
+        string $ipConfig,
+    ): void {
+        $payload = [
+            'ciuser' => $username,
+            'ipconfig0' => $ipConfig,
+            'ciupgrade' => 0,
+            'boot' => 'order=scsi0',
+            'serial0' => 'socket',
+        ];
+
+        if ($password !== null && $password !== '') {
+            $payload['cipassword'] = $password;
+        }
+
+        if ($publicKey !== null && $publicKey !== '') {
+            $payload['sshkeys'] = rawurlencode(trim($publicKey));
+        }
+
+        $this->put('/nodes/'.$this->node().'/qemu/'.$vmid.'/config', $payload);
+    }
+
+    public function convertToTemplate(int $vmid): void
+    {
+        $upid = $this->post('/nodes/'.$this->node().'/qemu/'.$vmid.'/template');
+
+        $this->awaitTask($upid, "convert cloud image VM {$vmid} to template");
     }
 
     /**
@@ -349,6 +447,16 @@ class ProxmoxClient
     private function put(string $path, array $payload = []): void
     {
         $this->unwrap($this->request()->asForm()->put($this->url($path), $payload), 'PUT '.$path);
+    }
+
+    /**
+     * PUT variant for endpoints that return an asynchronous task identifier.
+     */
+    private function putReturningTask(string $path, array $payload = []): ?string
+    {
+        $result = $this->unwrap($this->request()->asForm()->put($this->url($path), $payload), 'PUT '.$path);
+
+        return is_string($result) && $result !== '' ? $result : null;
     }
 
     /**
