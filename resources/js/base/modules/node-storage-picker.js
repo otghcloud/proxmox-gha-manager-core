@@ -5,7 +5,8 @@ export default function initNodeStoragePicker() {
         return;
     }
 
-    const connectionFields = ['proxmox_url', 'proxmox_node', 'proxmox_token_id', 'proxmox_token_secret'];
+    const realmSelect = root.querySelector('[data-auth-realm]');
+    const authFieldGroups = [...root.querySelectorAll('[data-auth-fields]')];
     const settings = root.querySelector('[data-node-settings]');
     const trigger = root.querySelector('[data-node-storage-load]');
     const status = root.querySelector('[data-node-storage-status]');
@@ -13,10 +14,30 @@ export default function initNodeStoragePicker() {
     const isUpdate = root.dataset.isUpdate === 'true';
     const targetId = root.dataset.targetId;
 
+    const connectionFieldsFor = (realm) => realm === 'password'
+        ? ['proxmox_url', 'proxmox_node', 'proxmox_username', 'proxmox_password']
+        : ['proxmox_url', 'proxmox_node', 'proxmox_token_id', 'proxmox_token_secret'];
+
+    const syncAuthFields = () => {
+        const realm = realmSelect?.value || 'api_token';
+
+        authFieldGroups.forEach((group) => {
+            const matches = group.dataset.authFields === realm;
+            group.hidden = !matches;
+            group.querySelectorAll('input').forEach((input) => {
+                input.disabled = !matches;
+                if (input.type !== 'password') {
+                    input.required = matches;
+                }
+            });
+        });
+    };
+
     const ready = () => {
-        const required = isUpdate
-            ? ['proxmox_url', 'proxmox_node', 'proxmox_token_id']
-            : connectionFields;
+        const realm = realmSelect?.value || 'api_token';
+        const all = connectionFieldsFor(realm);
+        const required = isUpdate ? all.filter((id) => id !== 'proxmox_token_secret' && id !== 'proxmox_password') : all;
+
         return required.every((id) => document.getElementById(id)?.value.trim() !== '');
     };
 
@@ -34,13 +55,20 @@ export default function initNodeStoragePicker() {
         }
     };
 
-    connectionFields.forEach((id) => document.getElementById(id)?.addEventListener('input', updateState));
+    syncAuthFields();
+    realmSelect?.addEventListener('change', () => {
+        syncAuthFields();
+        updateState();
+    });
+
+    ['proxmox_url', 'proxmox_node', 'proxmox_token_id', 'proxmox_token_secret', 'proxmox_username', 'proxmox_password']
+        .forEach((id) => document.getElementById(id)?.addEventListener('input', updateState));
 
     trigger.addEventListener('click', async () => {
         updateState();
         if (!ready()) return;
         status.textContent = 'Loading storage options...';
-        const payload = Object.fromEntries([...document.querySelectorAll('[data-node-form] input, [data-node-form] select')].filter((field) => field.name).map((field) => [field.name, field.type === 'checkbox' ? field.checked : field.value]));
+        const payload = Object.fromEntries([...document.querySelectorAll('[data-node-form] input, [data-node-form] select')].filter((field) => field.name && !field.disabled).map((field) => [field.name, field.type === 'checkbox' ? field.checked : field.value]));
         if (targetId) {
             payload.target_id = targetId;
         }

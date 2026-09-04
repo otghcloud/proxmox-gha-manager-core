@@ -2,6 +2,7 @@
 
 namespace App\Http\Requests;
 
+use App\Models\ProxmoxTarget;
 use Illuminate\Foundation\Http\FormRequest;
 use Illuminate\Validation\Rule;
 
@@ -18,6 +19,7 @@ class ProxmoxTargetRequest extends FormRequest
     public function rules(): array
     {
         $target = $this->route('target');
+        $isPasswordAuth = $this->input('proxmox_auth_realm') === ProxmoxTarget::AUTH_REALM_PASSWORD;
 
         return [
             'name' => ['required', 'string', 'max:255'],
@@ -27,8 +29,11 @@ class ProxmoxTargetRequest extends FormRequest
             ],
             'proxmox_url' => ['required', 'url', 'max:255'],
             'proxmox_node' => ['required', 'string', 'max:255'],
-            'proxmox_token_id' => ['required', 'string', 'max:255'],
-            'proxmox_token_secret' => [$target === null ? 'required' : 'nullable', 'string'],
+            'proxmox_auth_realm' => ['required', Rule::in([ProxmoxTarget::AUTH_REALM_API_TOKEN, ProxmoxTarget::AUTH_REALM_PASSWORD])],
+            'proxmox_token_id' => [$isPasswordAuth ? 'nullable' : 'required', 'string', 'max:255'],
+            'proxmox_token_secret' => [$isPasswordAuth || $target !== null ? 'nullable' : 'required', 'string'],
+            'proxmox_username' => [$isPasswordAuth ? 'required' : 'nullable', 'string', 'max:255'],
+            'proxmox_password' => [$isPasswordAuth && $target === null ? 'required' : 'nullable', 'string'],
             'proxmox_verify_tls' => ['boolean'],
             'proxmox_ca_bundle' => ['nullable', 'string', 'max:255'],
             'proxmox_resource_pool' => ['nullable', 'string', 'max:255'],
@@ -52,6 +57,9 @@ class ProxmoxTargetRequest extends FormRequest
         $this->merge([
             'enabled' => $this->boolean('enabled'),
             'proxmox_verify_tls' => $this->boolean('proxmox_verify_tls'),
+            'proxmox_auth_realm' => $this->filled('proxmox_auth_realm')
+                ? $this->input('proxmox_auth_realm')
+                : ProxmoxTarget::AUTH_REALM_API_TOKEN,
             'network_bridge' => $this->filled('network_bridge') ? trim((string) $this->input('network_bridge')) : 'vmbr0',
             'vlan_tag' => $this->filled('vlan_tag') ? $this->input('vlan_tag') : null,
             'slug' => $this->filled('slug')

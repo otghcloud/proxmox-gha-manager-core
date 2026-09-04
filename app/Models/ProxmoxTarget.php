@@ -15,12 +15,18 @@ class ProxmoxTarget extends Model
 
     protected $guarded = ['id'];
 
+    /** Standard login ('password', ticket auth) or API token ('api_token', the default). */
+    public const AUTH_REALM_API_TOKEN = 'api_token';
+
+    public const AUTH_REALM_PASSWORD = 'password';
+
     protected function casts(): array
     {
         return [
             'enabled' => 'boolean',
             'proxmox_verify_tls' => 'boolean',
             'proxmox_token_secret' => 'encrypted',
+            'proxmox_password' => 'encrypted',
             'current_vm_count' => 'integer',
             'max_total_vms' => 'integer',
             'last_health_check_at' => 'datetime',
@@ -31,6 +37,11 @@ class ProxmoxTarget extends Model
             'runner_vmid_range_end' => 'integer',
             'vlan_tag' => 'integer',
         ];
+    }
+
+    public function usesPasswordAuth(): bool
+    {
+        return $this->proxmox_auth_realm === self::AUTH_REALM_PASSWORD;
     }
 
     /**
