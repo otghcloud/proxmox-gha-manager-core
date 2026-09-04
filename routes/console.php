@@ -4,7 +4,7 @@ use Illuminate\Support\Facades\Schedule;
 
 Schedule::command('runners:reap')
     ->everyMinute()
-    ->withoutOverlapping()
+    ->withoutOverlapping(10)
     ->runInBackground();
 
 Schedule::command('runners:warm-pools')

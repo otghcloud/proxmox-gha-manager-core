@@ -13,6 +13,7 @@ use App\Models\WorkflowJob;
 use App\Services\SettingsRepository;
 use Illuminate\Http\RedirectResponse;
 use Illuminate\Http\Request;
+use Illuminate\Support\Facades\Artisan;
 use Illuminate\Support\Facades\DB;
 use Illuminate\View\View;
 use Symfony\Component\HttpFoundation\StreamedResponse;
@@ -62,6 +63,13 @@ class DebugController extends Controller
         $this->settings->set(SettingsRepository::FORCE_REAP_ALL_REQUESTED, '1');
 
         return back()->with('success', 'The next scheduled reaper pass will force-reap every managed VM.');
+    }
+
+    public function clearSchedulerCache(): RedirectResponse
+    {
+        Artisan::call('schedule:clear-cache');
+
+        return back()->with('success', 'Cleared scheduled task mutexes.');
     }
 
     public function clearRunnerHistory(): RedirectResponse

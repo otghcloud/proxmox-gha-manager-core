@@ -88,6 +88,19 @@
 					</form>
 				</div>
 
+				  <div class="list-group-item d-flex align-items-center justify-content-between">
+					  <div class="me-3">
+						  <strong>Clear scheduler locks</strong>
+						  <div class="text-secondary small">
+							  Removes stale Laravel scheduler mutexes, including a stuck reaper lock.
+						  </div>
+					  </div>
+					  <form action="{{ route('settings.debug.scheduler-cache') }}" method="POST" onsubmit="return confirm('Clear all scheduler locks?');">
+						  @csrf
+						  <button class="btn btn-warning" type="submit">Clear locks</button>
+					  </form>
+				  </div>
+
 				<div class="list-group-item d-flex align-items-center justify-content-between">
 					<div class="me-3">
 						<strong>Clear runner history</strong>

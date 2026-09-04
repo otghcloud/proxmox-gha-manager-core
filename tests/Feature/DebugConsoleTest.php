@@ -115,6 +115,15 @@ class DebugConsoleTest extends TestCase
         $this->assertTrue(app(SettingsRepository::class)->bool(SettingsRepository::FORCE_REAP_ALL_REQUESTED, false));
     }
 
+    public function test_scheduler_cache_can_be_cleared_from_debug_page(): void
+    {
+        $this->artisan('schedule:clear-cache')->assertExitCode(0);
+
+        $this->post(route('settings.debug.scheduler-cache'))
+            ->assertRedirect()
+            ->assertSessionHas('success', 'Cleared scheduled task mutexes.');
+    }
+
     public function test_scheduled_force_reap_ignores_normal_reaping_rules_and_consumes_the_request(): void
     {
         $runner = $this->runner(901, RunnerState::Idle);

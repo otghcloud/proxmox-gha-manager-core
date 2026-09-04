@@ -120,6 +120,7 @@ Route::middleware('auth')->group(function (): void {
             Route::get('/', [DebugController::class, 'index'])->name('index');
             Route::put('/toggle', [DebugController::class, 'toggle'])->name('toggle');
             Route::post('/reap-all', [DebugController::class, 'reapAll'])->name('reap-all');
+            Route::post('/scheduler-cache', [DebugController::class, 'clearSchedulerCache'])->name('scheduler-cache');
             Route::delete('/runner-history', [DebugController::class, 'clearRunnerHistory'])->name('runner-history');
             Route::delete('/build-history', [DebugController::class, 'clearBuildHistory'])->name('build-history');
             Route::delete('/webhook-logs', [DebugController::class, 'purgeWebhookLogs'])->name('webhook-logs');
