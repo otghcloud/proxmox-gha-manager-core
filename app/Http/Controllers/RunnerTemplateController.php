@@ -8,6 +8,7 @@ use App\Enums\PoolOs;
 use App\Enums\RunnerState;
 use App\Http\Requests\RunnerTemplateBuildRequest;
 use App\Http\Requests\RunnerTemplateRequest;
+use App\Models\Credential;
 use App\Models\Environment;
 use App\Models\ImageBuild;
 use App\Models\ProxmoxTarget;
@@ -134,6 +135,7 @@ class RunnerTemplateController extends Controller
             'environments' => Environment::orderBy('name')->get(),
             'targets' => ProxmoxTarget::orderBy('name')->get(),
             'catalogTemplates' => $this->catalog->templates(),
+            'credentials' => Credential::orderBy('os')->orderBy('name')->get(),
         ];
     }
 

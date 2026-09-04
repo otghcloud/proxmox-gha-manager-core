@@ -31,6 +31,7 @@
 				</select>
 			</div>
 			<div class="col-12" data-template-details hidden></div>
+			<div class="col-md-6"><label class="form-label required" for="credential_id">Runner credential</label><select class="form-select" id="credential_id" name="credential_id" required><option value="">Select a credential</option>@foreach ($credentials as $credential)<option data-os="{{ $credential->os->value }}" value="{{ $credential->id }}" @selected(old('credential_id', $template->credential_id) == $credential->id)>{{ $credential->name }} ({{ $credential->os->label() }})</option>@endforeach</select></div>
 			<div class="col-12">
 				<label class="form-label" for="description">Description</label>
 				<textarea class="form-control" id="description" name="description" rows="3">{{ old('description', $template->description) }}</textarea>

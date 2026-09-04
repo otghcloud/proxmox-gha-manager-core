@@ -3,6 +3,7 @@
 namespace App\Http\Requests;
 
 use App\Enums\PoolOs;
+use App\Models\Credential;
 use App\Services\Builds\Packer\TemplateCatalog;
 use Illuminate\Foundation\Http\FormRequest;
 use Illuminate\Validation\Rule;
@@ -39,6 +40,7 @@ class RunnerTemplateRequest extends FormRequest
                     ->ignore($template),
             ],
             'os' => ['required', Rule::enum(PoolOs::class)],
+            'credential_id' => ['required', 'integer', 'exists:credentials,id'],
             'description' => ['nullable', 'string', 'max:2000'],
 
             'template_catalog_id' => ['required', 'string'],
@@ -49,9 +51,15 @@ class RunnerTemplateRequest extends FormRequest
     {
         $entry = app(TemplateCatalog::class)->entryForId($this->input('template_catalog_id'));
 
+        $credentialId = $this->input('credential_id');
+        if ($credentialId === null && ($entry?->platform() === PoolOs::Linux->value || $this->input('os') === PoolOs::Linux->value)) {
+            $credentialId = Credential::query()->where('name', 'Default Linux SSH')->value('id');
+        }
+
         $this->merge([
             'name' => $entry?->name(),
             'os' => $entry?->platform(),
+            'credential_id' => $credentialId,
         ]);
     }
 
@@ -64,6 +72,11 @@ class RunnerTemplateRequest extends FormRequest
                 $validator->errors()->add('template_catalog_id', 'The selected template is not present in the installed catalog.');
             } elseif (! $entry->isBuildable()) {
                 $validator->errors()->add('template_catalog_id', $entry->disabledReason() ?? 'The selected template is not buildable.');
+            }
+
+            $credential = Credential::find($this->input('credential_id'));
+            if ($credential === null || $credential->os !== PoolOs::tryFrom((string) $this->input('os'))) {
+                $validator->errors()->add('credential_id', 'Select a credential for the template operating system.');
             }
 
             $selected = array_map('intval', $this->input('target_ids', []));

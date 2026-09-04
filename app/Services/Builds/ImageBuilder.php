@@ -4,6 +4,7 @@ namespace App\Services\Builds;
 
 use App\Enums\BuildStatus;
 use App\Exceptions\ProvisioningException;
+use App\Models\Credential;
 use App\Models\ImageBuild;
 use App\Models\LogEntry;
 use App\Models\RunnerTemplate;
@@ -65,12 +66,15 @@ class ImageBuilder
             ])->save();
         });
 
-        $account = $build->environment->githubAccount;
+        $credential = $build->credentialSnapshot ?: $build->credential ?: Credential::query()->where('name', 'Default Linux SSH')->first();
+        if ($credential === null) {
+            throw new ProvisioningException('The build has no credential snapshot.');
+        }
 
         $this->userData->render(
             $templateDirectory,
-            (string) $account->linux_ssh_username,
-            (string) $account->linux_ssh_password,
+            (string) $credential->username,
+            (string) $credential->password,
         );
 
         $process = $this->runPacker($build, $templateDirectory, $this->buildEnvironment($build, $entry), $logPath);
@@ -249,6 +253,10 @@ class ImageBuilder
     private function environmentVariables(ImageBuild $build): array
     {
         $account = $build->environment->githubAccount;
+        $credential = $build->credentialSnapshot ?: $build->credential ?: Credential::query()->where('name', 'Default Linux SSH')->first();
+        if ($credential === null) {
+            throw new ProvisioningException('The build has no credential snapshot.');
+        }
         $template = $build->runnerTemplate;
         $targetNode = $build->proxmoxTarget;
         $mapping = $template->targetMappings()->whereKey($targetNode->id)->first();
@@ -265,8 +273,8 @@ class ImageBuilder
             'PKR_VAR_pmx_template_name' => $template->vmName(),
             'PKR_VAR_pmx_cpu_type' => (string) ($targetNode->build_cpu_type ?: 'host'),
             'PKR_VAR_pmx_network_bridge' => (string) ($targetNode->network_bridge ?: 'vmbr0'),
-            'PKR_VAR_ssh_username' => (string) $account->linux_ssh_username,
-            'PKR_VAR_ssh_password' => (string) $account->linux_ssh_password,
+            'PKR_VAR_ssh_username' => (string) $credential->username,
+            'PKR_VAR_ssh_password' => (string) $credential->password,
             'PKR_VAR_pmx_iso_file' => (string) $mapping->pivot->build_iso_file,
 
             // Authenticated plugin and tool downloads, which otherwise hit GitHub's anonymous rate limit.

@@ -49,6 +49,8 @@ class SettingsRepository
 
     public const RUNNER_NAME_PREFIX = 'runner_name_prefix';
 
+    public const DEFAULT_RUNNER_USERNAME = 'default_runner_username';
+
     public function templateAutoCheckEnabled(): bool
     {
         return $this->bool(self::TEMPLATE_AUTO_CHECK_ENABLED, false);
@@ -69,6 +71,13 @@ class SettingsRepository
         $prefix = trim((string) $this->get(self::RUNNER_NAME_PREFIX, 'gha'));
 
         return $prefix === '' ? 'gha' : $prefix;
+    }
+
+    public function defaultRunnerUsername(): string
+    {
+        $username = trim((string) $this->get(self::DEFAULT_RUNNER_USERNAME, 'runner'));
+
+        return $username === '' ? 'runner' : $username;
     }
 
     public function templateRetentionMode(): string

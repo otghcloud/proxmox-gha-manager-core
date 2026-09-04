@@ -177,7 +177,12 @@ class Provisioner
         // Recorded before launching so a failed launch can still be cleaned up by the reaper.
         $runner->forceFill(['github_runner_id' => $jit->runnerId])->save();
 
-        $this->launcher->launch($this->environment->githubAccount, $pool, $ip, $jit->encodedJitConfig, $runner->runner_name);
+        $credential = $template->credential;
+        if ($credential === null || ! $credential->hasAuthenticationMaterial()) {
+            throw new ProvisioningException("Template {$template->name} has no usable runner credential.");
+        }
+
+        $this->launcher->launch($credential, $pool, $ip, $jit->encodedJitConfig, $runner->runner_name);
     }
 
     private function selectTarget(Pool $pool, ?ProxmoxTarget $preferredTarget = null): void

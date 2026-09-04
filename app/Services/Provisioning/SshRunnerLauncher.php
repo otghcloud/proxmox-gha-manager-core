@@ -3,7 +3,7 @@
 namespace App\Services\Provisioning;
 
 use App\Exceptions\RemoteException;
-use App\Models\GitHubAccount;
+use App\Models\Credential;
 use App\Models\Pool;
 use App\Services\Ssh\SshConnection;
 
@@ -20,13 +20,14 @@ class SshRunnerLauncher
      * and removed by the launch command before the runner starts — the same upload-then-execute
      * pattern aurora-manage uses for its remote scripts.
      */
-    public function launch(GitHubAccount $account, Pool $pool, string $host, string $encodedJitConfig, string $runnerName): void
+    public function launch(Credential $credential, Pool $pool, string $host, string $encodedJitConfig, string $runnerName): void
     {
         $ssh = new SshConnection(
             host: $host,
             port: $pool->runnerTemplate->os->remotePort(),
-            username: $account->linux_ssh_username,
-            password: $account->linux_ssh_password,
+            username: $credential->username(),
+            password: $credential->password,
+            privateKey: $credential->private_key,
         );
 
         $directory = rtrim($pool->runnerDirectory(), '/');
@@ -35,7 +36,7 @@ class SshRunnerLauncher
         $ssh->putString($jitPath, $encodedJitConfig)->chmod(0600, $jitPath);
 
         // Temporary until the templates ship with the SSH user already in the docker group.
-        $ssh->run('sudo -n usermod -aG docker '.escapeshellarg($account->linux_ssh_username));
+        $ssh->run('sudo -n usermod -aG docker '.escapeshellarg($credential->username()));
 
         $ssh->run('sudo -n hostnamectl set-hostname '.escapeshellarg($runnerName));
 

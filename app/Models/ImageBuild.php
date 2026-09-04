@@ -6,6 +6,7 @@ use App\Enums\BuildStatus;
 use Illuminate\Database\Eloquent\Factories\HasFactory;
 use Illuminate\Database\Eloquent\Model;
 use Illuminate\Database\Eloquent\Relations\BelongsTo;
+use Illuminate\Database\Eloquent\Relations\HasOne;
 use Illuminate\Database\Eloquent\Relations\MorphMany;
 
 class ImageBuild extends Model
@@ -26,6 +27,7 @@ class ImageBuild extends Model
             'template_vmid' => 'integer',
             'sequence' => 'integer',
             'template_catalog_id' => 'string',
+            'credential_id' => 'integer',
         ];
     }
 
@@ -47,6 +49,16 @@ class ImageBuild extends Model
     public function proxmoxTarget(): BelongsTo
     {
         return $this->belongsTo(ProxmoxTarget::class);
+    }
+
+    public function credential(): BelongsTo
+    {
+        return $this->belongsTo(Credential::class);
+    }
+
+    public function credentialSnapshot(): HasOne
+    {
+        return $this->hasOne(BuildCredential::class);
     }
 
     public function logEntries(): MorphMany
