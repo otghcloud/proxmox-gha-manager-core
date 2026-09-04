@@ -5,6 +5,7 @@ namespace OTGH\ProxmoxGHA\Cloudimg;
 use App\Contracts\Builds\BuilderInterface;
 use App\Contracts\Builds\BuildResult;
 use App\Exceptions\ProvisioningException;
+use App\Models\BuildCredential;
 use App\Models\Credential;
 use App\Models\ImageBuild;
 use App\Services\Builds\RunnerImagesLocator;
@@ -131,7 +132,7 @@ final class CloudimgBuilder implements BuilderInterface
         TemplateCatalogEntry $entry,
         string $templateDirectory,
         string $ip,
-        Credential $credential,
+        Credential|BuildCredential $credential,
     ): void {
         $manifestPath = rtrim($templateDirectory, '/').'/build.json';
 
