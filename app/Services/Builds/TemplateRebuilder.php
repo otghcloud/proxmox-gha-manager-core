@@ -4,6 +4,8 @@ namespace App\Services\Builds;
 
 use App\Enums\BuildStatus;
 use App\Jobs\BuildImageJob;
+use App\Models\BuildCredential;
+use App\Models\Credential;
 use App\Models\ImageBuild;
 use App\Models\ProxmoxTarget;
 use App\Models\RetiredTemplateVmid;
@@ -11,6 +13,7 @@ use App\Models\RunnerTemplate;
 use App\Services\Builds\Packer\TemplateCatalog;
 use App\Services\Provisioning\VmidAllocator;
 use App\Services\Proxmox\ProxmoxClient;
+use App\Services\SettingsRepository;
 use Illuminate\Support\Collection;
 use Illuminate\Support\Facades\DB;
 use Illuminate\Support\Facades\Log;
@@ -66,18 +69,38 @@ class TemplateRebuilder
         return (new VmidAllocator(new ProxmoxClient($target)))->allocate(
             $target,
             'template',
-            fn (int $vmid): ImageBuild => ImageBuild::create([
-                'environment_id' => $template->environment_id,
-                'runner_template_id' => $template->id,
-                'proxmox_target_id' => $target->id,
-                'triggered_by' => $userId,
-                'template_catalog_id' => $entry->id(),
-                'status' => BuildStatus::Queued,
-                'template_vmid' => $vmid,
-                'version' => $entry->version(),
-                'rebuild_batch_id' => $batchId,
-                'sequence' => $index,
-            ]),
+            function (int $vmid) use ($template, $target, $userId, $entry, $batchId, $index): ImageBuild {
+                $credential = $template->credential ?: Credential::query()->where('name', 'Default Linux SSH')->first();
+                if ($credential === null || ! $credential->hasAuthenticationMaterial()) {
+                    throw new \RuntimeException('The template has no usable runner credential.');
+                }
+
+                $build = ImageBuild::create([
+                    'environment_id' => $template->environment_id,
+                    'runner_template_id' => $template->id,
+                    'credential_id' => $credential->id,
+                    'proxmox_target_id' => $target->id,
+                    'triggered_by' => $userId,
+                    'template_catalog_id' => $entry->id(),
+                    'status' => BuildStatus::Queued,
+                    'template_vmid' => $vmid,
+                    'version' => $entry->version(),
+                    'rebuild_batch_id' => $batchId,
+                    'sequence' => $index,
+                ]);
+
+                BuildCredential::create([
+                    'image_build_id' => $build->id,
+                    'credential_id' => $credential->id,
+                    'os' => $credential->os->value,
+                    'username' => $credential->username(app(SettingsRepository::class)->defaultRunnerUsername()),
+                    'password' => $credential->password,
+                    'private_key' => $credential->private_key,
+                    'public_key' => $credential->public_key,
+                ]);
+
+                return $build;
+            },
         );
     }
 

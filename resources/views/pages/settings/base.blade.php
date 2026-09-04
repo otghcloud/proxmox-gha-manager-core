@@ -26,6 +26,7 @@
 							<div class="list-group list-group-transparent mb-3">
 								<a class="list-group-item list-group-item-action{{ request()->routeIs('settings.templates.index') ? ' active' : '' }}" href="{{ route('settings.templates.index') }}">General</a>
 								<a class="list-group-item list-group-item-action{{ request()->routeIs('settings.templates.retention*') ? ' active' : '' }}" href="{{ route('settings.templates.retention') }}">Retention</a>
+								<a class="list-group-item list-group-item-action{{ request()->routeIs('settings.templates.credentials*') ? ' active' : '' }}" href="{{ route('settings.templates.credentials.index') }}">Credentials</a>
 							</div>
 
 							<h4 class="subheader">Workflows</h4>

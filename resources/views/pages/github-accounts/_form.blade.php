@@ -12,10 +12,6 @@
 		<div class="col-md-6"><label class="form-label required" for="github_api_url">API URL</label><input class="form-control" id="github_api_url" name="github_api_url" type="url" required value="{{ old('github_api_url', $account->github_api_url) }}"></div>
 		<div class="col-md-3"><label class="form-label required" for="github_runner_group_id">Runner group ID</label><input class="form-control" id="github_runner_group_id" name="github_runner_group_id" type="number" required value="{{ old('github_runner_group_id', $account->github_runner_group_id) }}"></div>
 		<div class="col-md-3"><label class="form-label required" for="github_work_folder">Work folder</label><input class="form-control" id="github_work_folder" name="github_work_folder" required value="{{ old('github_work_folder', $account->github_work_folder) }}"></div>
-		<div class="col-md-6"><label class="form-label required" for="linux_ssh_username">Linux SSH username</label><input class="form-control" id="linux_ssh_username" name="linux_ssh_username" required value="{{ old('linux_ssh_username', $account->linux_ssh_username) }}"></div>
-		<div class="col-md-6"><label class="form-label" for="linux_ssh_password">Linux SSH password</label><input class="form-control" id="linux_ssh_password" name="linux_ssh_password" type="password"></div>
-		<div class="col-md-6"><label class="form-label" for="windows_username">Windows username</label><input class="form-control" id="windows_username" name="windows_username" value="{{ old('windows_username', $account->windows_username) }}"></div>
-		<div class="col-md-6"><label class="form-label" for="windows_password">Windows password</label><input class="form-control" id="windows_password" name="windows_password" type="password"></div>
 	</div></div>
 	<div class="card-footer text-end"><a class="btn btn-link" href="{{ route('github-accounts.index') }}">Cancel</a><button class="btn btn-primary" type="submit">{{ $isUpdate ? 'Save changes' : 'Create account' }}</button></div>
 </div>

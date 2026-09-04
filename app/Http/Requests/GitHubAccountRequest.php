@@ -30,10 +30,6 @@ class GitHubAccountRequest extends FormRequest
             'github_api_url' => ['required', 'url', 'max:255'],
             'github_runner_group_id' => ['required', 'integer', 'min:1'],
             'github_work_folder' => ['required', 'string', 'max:255'],
-            'linux_ssh_username' => ['required', 'string', 'max:255'],
-            'linux_ssh_password' => ['nullable', 'string'],
-            'windows_username' => ['nullable', 'string', 'max:255'],
-            'windows_password' => ['nullable', 'string'],
         ];
     }
 }

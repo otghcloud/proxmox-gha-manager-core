@@ -18,7 +18,7 @@ class GitHubAccountController extends Controller
 
     public function create(): View
     {
-        return view('pages.github-accounts.create', ['account' => new GitHubAccount(['github_api_url' => 'https://api.github.com', 'github_runner_group_id' => 1, 'github_work_folder' => '_work', 'linux_ssh_username' => 'runner'])]);
+        return view('pages.github-accounts.create', ['account' => new GitHubAccount(['github_api_url' => 'https://api.github.com', 'github_runner_group_id' => 1, 'github_work_folder' => '_work'])]);
     }
 
     public function store(GitHubAccountRequest $request): RedirectResponse
@@ -39,7 +39,7 @@ class GitHubAccountController extends Controller
     public function update(GitHubAccountRequest $request, GitHubAccount $githubAccount): RedirectResponse
     {
         $data = $request->validated();
-        foreach (['github_token', 'github_webhook_secret', 'linux_ssh_password', 'windows_password'] as $secret) {
+        foreach (['github_token', 'github_webhook_secret'] as $secret) {
             if (blank($data[$secret] ?? null)) {
                 unset($data[$secret]);
             }

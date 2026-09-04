@@ -81,6 +81,11 @@ class RunnerTemplate extends Model
         return $this->belongsTo(Environment::class);
     }
 
+    public function credential(): BelongsTo
+    {
+        return $this->belongsTo(Credential::class);
+    }
+
     public function pools(): HasMany
     {
         return $this->hasMany(Pool::class);

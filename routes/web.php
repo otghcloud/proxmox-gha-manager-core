@@ -9,6 +9,7 @@ use App\Http\Controllers\PoolController;
 use App\Http\Controllers\ProxmoxTargetController;
 use App\Http\Controllers\RunnerController;
 use App\Http\Controllers\RunnerTemplateController;
+use App\Http\Controllers\Settings\CredentialController;
 use App\Http\Controllers\Settings\DebugController;
 use App\Http\Controllers\Settings\GeneralController;
 use App\Http\Controllers\Settings\JobsController;
@@ -110,6 +111,8 @@ Route::middleware('auth')->group(function (): void {
         Route::post('/templates/check-updates', [TemplatesController::class, 'checkUpdates'])->name('templates.check-updates');
         Route::post('/templates/download-update', [TemplatesController::class, 'downloadUpdate'])->name('templates.download-update');
         Route::post('/templates/versions/{version}/activate', [TemplatesController::class, 'activateVersion'])->name('templates.activate-version');
+        Route::resource('templates/credentials', CredentialController::class)->except(['show'])->names('templates.credentials');
+        Route::post('/templates/credentials/default', [CredentialController::class, 'ensureDefault'])->name('templates.credentials.default');
 
         Route::resource('users', UserController::class)->except(['show']);
 

@@ -19,8 +19,6 @@ class GitHubAccount extends Model
     protected $hidden = [
         'github_token',
         'github_webhook_secret',
-        'linux_ssh_password',
-        'windows_password',
     ];
 
     public function uniqueIds(): array
@@ -38,8 +36,6 @@ class GitHubAccount extends Model
         return [
             'github_token' => 'encrypted',
             'github_webhook_secret' => 'encrypted',
-            'linux_ssh_password' => 'encrypted',
-            'windows_password' => 'encrypted',
             'github_runner_group_id' => 'integer',
         ];
     }

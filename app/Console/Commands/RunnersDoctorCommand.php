@@ -76,8 +76,8 @@ class RunnersDoctorCommand extends EnvironmentCommand
             throw new \RuntimeException("template VMID for {$template->name} not found");
         }
 
-        if (blank($environment->githubAccount->linux_ssh_password)) {
-            throw new \RuntimeException('no SSH password configured');
+        if ($template->credential === null || ! $template->credential->hasAuthenticationMaterial()) {
+            throw new \RuntimeException('no runner credential configured');
         }
 
         return count($pool->labels).' labels, max '.$pool->totalMaxConcurrent().', template '.$mapping->pivot->template_vmid;
