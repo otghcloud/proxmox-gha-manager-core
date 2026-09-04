@@ -16,7 +16,7 @@ use App\Models\RetiredTemplateVmid;
 use App\Models\Runner;
 use App\Models\RunnerTemplate;
 use App\Services\Builds\ImageBuilder;
-use App\Services\Builds\Packer\TemplateCatalog;
+use App\Services\Builds\TemplateCatalog;
 use App\Services\Builds\TemplateRebuilder;
 use App\Services\Proxmox\ProxmoxClient;
 use App\Services\Templates\TemplatePruner;
@@ -174,7 +174,7 @@ class RunnerTemplateController extends Controller
 
         $targets = $targets->filter(fn (ProxmoxTarget $node): bool => $node->pivot->build_iso_file !== null);
 
-        $catalogEntry = $this->catalog->entryForId($runnerTemplate->template_catalog_id);
+        $catalogEntry = $this->catalog->entryForId($runnerTemplate->template_catalog_id, $request->builder());
 
         if ($targets->isEmpty() || $catalogEntry === null) {
             return back()->with('error', 'Configure a build target and an installation ISO for at least one node before building.');
@@ -204,7 +204,7 @@ class RunnerTemplateController extends Controller
         }
 
         try {
-            $builds = $this->rebuilder->queue($runnerTemplate, $targets, $request->mode(), auth()->id());
+            $builds = $this->rebuilder->queue($runnerTemplate, $targets, $request->mode(), auth()->id(), $request->builder());
         } catch (Throwable $e) {
             return back()->with('error', 'Could not reserve a template VMID: '.$e->getMessage());
         }

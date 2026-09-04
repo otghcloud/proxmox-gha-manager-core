@@ -6,7 +6,7 @@ use App\DataTables\BuildsDataTable;
 use App\Models\ImageBuild;
 use App\Services\Builds\BuildCanceller;
 use App\Services\Builds\BuildProgress;
-use App\Services\Builds\Packer\TemplateCatalog;
+use App\Services\Builds\TemplateCatalog;
 use Illuminate\Http\JsonResponse;
 use Illuminate\Http\RedirectResponse;
 use Illuminate\Http\Request;
@@ -32,7 +32,7 @@ class BuildController extends Controller
 
         return view('pages.builds.show', [
             'build' => $imageBuild,
-            'catalogEntry' => $this->catalog->entryForId($imageBuild->template_catalog_id),
+            'catalogEntry' => $this->catalog->entryForId($imageBuild->template_catalog_id, $imageBuild->builder_type),
             'log' => $this->readLog($imageBuild),
             'progress' => $this->progress->forBuild($imageBuild),
         ]);

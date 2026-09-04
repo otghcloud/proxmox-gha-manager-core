@@ -1,0 +1,23 @@
+{
+    "name": "otghcloud/gha-plugin-cloudimg",
+    "version": "0.1.0",
+    "description": "Cloud image builder plugin for Proxmox GHA Manager",
+    "type": "library",
+    "license": "MIT",
+    "require": {
+        "php": "^8.3",
+        "laravel/framework": "^13.17"
+    },
+    "autoload": {
+        "psr-4": {
+            "OTGH\\ProxmoxGHA\\Cloudimg\\": "src/"
+        }
+    },
+    "extra": {
+        "laravel": {
+            "providers": [
+                "OTGH\\ProxmoxGHA\\Cloudimg\\CloudimgServiceProvider"
+            ]
+        }
+    }
+}

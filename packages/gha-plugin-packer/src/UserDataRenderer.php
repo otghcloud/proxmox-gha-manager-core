@@ -1,16 +1,13 @@
 <?php
 
-namespace App\Services\Builds\Packer;
+namespace OTGH\ProxmoxGHA\Packer;
 
 use App\Exceptions\ProvisioningException;
 
 /**
  * Renders the cloud-init autoinstall file Packer serves over HTTP during an Ubuntu build.
- *
- * The published templates ship only `user-data.tpl`; the rendered file carries a password hash
- * and is therefore never distributed.
  */
-class UserDataRenderer
+final class UserDataRenderer
 {
     public function render(string $templateDirectory, string $username, string $password): void
     {
@@ -34,7 +31,6 @@ class UserDataRenderer
             '${RUNNER_USERNAME}' => $username,
             '${RUNNER_PASSWORD_HASH}' => $this->passwordHash($password),
         ]);
-
         $destination = $templateDirectory.'/http/user-data';
 
         if (file_put_contents($destination, $rendered) === false) {

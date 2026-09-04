@@ -13,6 +13,19 @@
 					@foreach ($buildableTargets as $buildable)
 						<input name="target_ids[]" type="hidden" value="{{ $buildable->id }}">
 					@endforeach
+					@if ($catalogEntry !== null)
+						<select class="form-select w-auto" name="builder" title="Build method">
+							@foreach ($catalogEntry->builders() as $builderKey => $builder)
+								@php
+									$builderType = $builder['type'] ?? $builderKey;
+									$builderBuildable = (bool) ($builder['buildable'] ?? false);
+								@endphp
+								<option value="{{ $builderType }}" @selected($builderType === $catalogEntry->builderType()) @disabled(! $builderBuildable)>
+									{{ $builder['display_name'] ?? $builder['label'] ?? ucfirst($builderType) }}{{ $builderBuildable ? '' : ' ('.($builder['disabled_reason'] ?? 'not supported').')' }}
+								</option>
+							@endforeach
+						</select>
+					@endif
 					<select class="form-select w-auto" name="mode">
 						<option value="sequential">Sequential</option>
 						<option value="parallel">Parallel</option>

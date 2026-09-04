@@ -10,7 +10,6 @@ use App\Models\ImageBuild;
 use App\Models\ProxmoxTarget;
 use App\Models\RetiredTemplateVmid;
 use App\Models\RunnerTemplate;
-use App\Services\Builds\Packer\TemplateCatalog;
 use App\Services\Provisioning\VmidAllocator;
 use App\Services\Proxmox\ProxmoxClient;
 use App\Services\SettingsRepository;
@@ -38,11 +37,16 @@ class TemplateRebuilder
      * @param  Collection<int, ProxmoxTarget>  $targets
      * @return Collection<int, ImageBuild>
      */
-    public function queue(RunnerTemplate $template, Collection $targets, string $mode, ?int $userId = null): Collection
-    {
+    public function queue(
+        RunnerTemplate $template,
+        Collection $targets,
+        string $mode,
+        ?int $userId = null,
+        ?string $builder = null,
+    ): Collection {
         $batchId = $targets->count() > 1 ? (string) Str::uuid() : null;
 
-        $builds = $targets->values()->map(fn (ProxmoxTarget $target, int $index): ImageBuild => $this->reserve($template, $target, $userId, $batchId, $index));
+        $builds = $targets->values()->map(fn (ProxmoxTarget $target, int $index): ImageBuild => $this->reserve($template, $target, $userId, $batchId, $index, $builder));
 
         if ($mode === self::MODE_SEQUENTIAL && $batchId !== null) {
             BuildImageJob::dispatch($builds->first()->id);
@@ -58,12 +62,22 @@ class TemplateRebuilder
     /**
      * Create the build record inside the VMID lock so the reservation is visible before it lifts.
      */
-    private function reserve(RunnerTemplate $template, ProxmoxTarget $target, ?int $userId, ?string $batchId, int $index): ImageBuild
-    {
-        $entry = $this->catalog->entryForId($template->template_catalog_id);
+    private function reserve(
+        RunnerTemplate $template,
+        ProxmoxTarget $target,
+        ?int $userId,
+        ?string $batchId,
+        int $index,
+        ?string $builder,
+    ): ImageBuild {
+        $entry = $this->catalog->entryForId($template->template_catalog_id, $builder);
 
         if ($entry === null) {
             throw new \RuntimeException('The template is not present in the installed catalog.');
+        }
+
+        if (! $entry->isBuildable()) {
+            throw new \RuntimeException($entry->disabledReason() ?: 'The selected template builder is not buildable.');
         }
 
         return (new VmidAllocator(new ProxmoxClient($target)))->allocate(
@@ -82,6 +96,7 @@ class TemplateRebuilder
                     'proxmox_target_id' => $target->id,
                     'triggered_by' => $userId,
                     'template_catalog_id' => $entry->id(),
+                    'builder_type' => $entry->builderType(),
                     'status' => BuildStatus::Queued,
                     'template_vmid' => $vmid,
                     'version' => $entry->version(),

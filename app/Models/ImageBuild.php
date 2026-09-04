@@ -27,6 +27,7 @@ class ImageBuild extends Model
             'template_vmid' => 'integer',
             'sequence' => 'integer',
             'template_catalog_id' => 'string',
+            'builder_type' => 'string',
             'credential_id' => 'integer',
         ];
     }

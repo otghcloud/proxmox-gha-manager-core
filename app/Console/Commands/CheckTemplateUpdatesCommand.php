@@ -4,7 +4,7 @@ namespace App\Console\Commands;
 
 use App\Models\ProxmoxTarget;
 use App\Models\RunnerTemplate;
-use App\Services\Builds\Packer\TemplateCatalog;
+use App\Services\Builds\TemplateCatalog;
 use App\Services\Builds\TemplateRebuilder;
 use App\Services\SettingsRepository;
 use App\Services\Templates\TemplateDownloadService;

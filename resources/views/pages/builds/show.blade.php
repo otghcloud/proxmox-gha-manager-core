@@ -47,6 +47,12 @@
 			</div>
 			<div class="card">
 				<div class="card-body">
+					<div class="subheader">Build method</div>
+					<div class="h3 mb-0 text-truncate">{{ $catalogEntry?->builder()['display_name'] ?? $catalogEntry?->builder()['label'] ?? $build->builder_type ?? '—' }}</div>
+				</div>
+			</div>
+			<div class="card">
+				<div class="card-body">
 					<div class="subheader">Started</div>
 					<div class="h3 mb-0">{{ $build->started_at?->forDisplay()->format('M j, g:i A') ?? '—' }}</div>
 				</div>

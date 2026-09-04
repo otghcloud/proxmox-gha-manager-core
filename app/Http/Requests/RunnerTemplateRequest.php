@@ -4,7 +4,7 @@ namespace App\Http\Requests;
 
 use App\Enums\PoolOs;
 use App\Models\Credential;
-use App\Services\Builds\Packer\TemplateCatalog;
+use App\Services\Builds\TemplateCatalog;
 use Illuminate\Foundation\Http\FormRequest;
 use Illuminate\Validation\Rule;
 use Illuminate\Validation\Validator;

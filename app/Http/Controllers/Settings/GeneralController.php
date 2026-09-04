@@ -7,7 +7,7 @@ use App\Models\Pool;
 use App\Models\ProxmoxTarget;
 use App\Models\Runner;
 use App\Models\WorkflowJob;
-use App\Services\Builds\Packer\TemplateCatalog;
+use App\Services\Builds\TemplateCatalog;
 use App\Services\SettingsRepository;
 use Illuminate\Http\RedirectResponse;
 use Illuminate\Http\Request;

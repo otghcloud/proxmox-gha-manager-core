@@ -2,8 +2,8 @@
 
 namespace Tests\Unit;
 
-use App\Services\Builds\Packer\TemplateCatalog;
-use App\Services\Builds\Packer\TemplateCatalogEntry;
+use App\Services\Builds\TemplateCatalog;
+use App\Services\Builds\TemplateCatalogEntry;
 use Tests\TestCase;
 
 class TemplateCatalogTest extends TestCase
@@ -111,5 +111,13 @@ class TemplateCatalogTest extends TestCase
         $this->assertSame('cloudimg', $entry->builderType());
         $this->assertFalse($entry->isBuildable());
         $this->assertSame('Cloud image builds are not yet supported.', $entry->disabledReason());
+    }
+
+    public function test_an_explicit_builder_selection_overrides_the_default_preference(): void
+    {
+        $entry = (new TemplateCatalog)->entryForId('ubuntu-slim', 'cloudimg');
+
+        $this->assertSame('cloudimg', $entry->builderName());
+        $this->assertSame('cloudimg', $entry->builderType());
     }
 }

@@ -3,8 +3,8 @@
 namespace Tests\Unit;
 
 use App\Exceptions\ProvisioningException;
-use App\Services\Builds\Packer\RunnerImagesLocator;
-use App\Services\Builds\Packer\TemplateCatalogEntry;
+use App\Services\Builds\RunnerImagesLocator;
+use App\Services\Builds\TemplateCatalogEntry;
 use Tests\TestCase;
 
 class RunnerImagesLocatorTest extends TestCase

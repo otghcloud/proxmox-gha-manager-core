@@ -2,6 +2,7 @@
 
 namespace App\Providers;
 
+use App\Services\Builds\BuilderRegistry;
 use App\Services\SettingsRepository;
 use Carbon\CarbonInterface;
 use Illuminate\Support\Carbon;
@@ -14,7 +15,7 @@ class AppServiceProvider extends ServiceProvider
      */
     public function register(): void
     {
-        //
+        $this->app->singleton(BuilderRegistry::class);
     }
 
     /**

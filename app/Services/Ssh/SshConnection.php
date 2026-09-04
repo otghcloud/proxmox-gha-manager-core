@@ -41,6 +41,15 @@ class SshConnection
         return $this;
     }
 
+    public function putFile(string $remotePath, string $localPath): self
+    {
+        if (! is_readable($localPath) || $this->sftp()->put($remotePath, $localPath, SFTP::SOURCE_LOCAL_FILE) === false) {
+            throw new RemoteException("Could not upload {$localPath} to {$this->host}:{$remotePath}");
+        }
+
+        return $this;
+    }
+
     public function chmod(int $mode, string $remotePath): self
     {
         $this->sftp()->chmod($mode, $remotePath);

@@ -1,13 +1,16 @@
 <?php
 
-namespace App\Services\Builds\Packer;
+namespace App\Services\Builds;
 
 use App\Exceptions\ProvisioningException;
 
 class TemplateCatalogEntry
 {
     /** @param array<string, mixed> $data */
-    public function __construct(private readonly array $data) {}
+    public function __construct(
+        private readonly array $data,
+        private readonly ?string $selectedBuilder = null,
+    ) {}
 
     public function id(): string
     {
@@ -34,14 +37,19 @@ class TemplateCatalogEntry
         return $this->string('platform.type');
     }
 
-    /**
-     * The builder a build runs through. Packer wins while cloudimg is still a stub.
-     */
     public function builderName(): string
     {
         $builders = $this->builders();
 
-        foreach (['packer', 'cloudimg'] as $name) {
+        if ($this->selectedBuilder !== null) {
+            if (! isset($builders[$this->selectedBuilder])) {
+                throw new ProvisioningException('The template catalog entry has no '.$this->selectedBuilder.' builder.');
+            }
+
+            return $this->selectedBuilder;
+        }
+
+        foreach (['packer', 'cloudimg', 'prebuilt'] as $name) {
             if (isset($builders[$name])) {
                 return $name;
             }
@@ -83,11 +91,7 @@ class TemplateCatalogEntry
         return ($this->builder()['provisioner']['scripts_root_required'] ?? false) === true;
     }
 
-    /**
-     * Resources the selected builder needs; these differ per build method.
-     *
-     * @return array<string, mixed>
-     */
+    /** @return array<string, mixed> */
     public function requirements(): array
     {
         $requirements = $this->builder()['build_requirements'] ?? null;
@@ -102,9 +106,6 @@ class TemplateCatalogEntry
         return is_numeric($minutes) && (int) $minutes > 0 ? (int) $minutes : null;
     }
 
-    /**
-     * Builder files live under the template root, one directory per builder.
-     */
     public function builderPath(): string
     {
         return $this->string('builders.'.$this->builderName().'.path');
