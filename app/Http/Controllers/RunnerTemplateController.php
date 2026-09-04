@@ -210,7 +210,7 @@ class RunnerTemplateController extends Controller
         if ($builds->count() === 1) {
             return redirect()
                 ->route('builds.show', $builds->first())
-                ->with('success', 'Build queued. This typically takes about an hour on SSD backed storage.');
+                ->with('success', 'Template build was successfully queued.');
         }
 
         return redirect()

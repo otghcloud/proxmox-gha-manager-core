@@ -20,12 +20,6 @@
 		<div class="card-group mb-3">
 			<div class="card">
 				<div class="card-body">
-					<div class="subheader">Status</div>
-					<span class="badge bg-{{ $build->status->colour() }}-lt" id="build-status">{{ $build->status->label() }}</span>
-				</div>
-			</div>
-			<div class="card">
-				<div class="card-body">
 					<div class="subheader">Environment</div>
 					<div class="h3 mb-0 text-truncate"><a href="{{ route('environments.show', $build->environment) }}">{{ $build->environment->name }}</a></div>
 				</div>
@@ -33,11 +27,11 @@
 			<div class="card">
 				<div class="card-body">
 					<div class="subheader">Template</div>
-					<div class="h3 mb-0 text-truncate">
+					<div class="h3 mb-0 text-truncate" title="{{ $build->runnerTemplate?->name }}{{ $build->version ? ' ('.$build->version.')' : '' }}">
 						@if ($build->runnerTemplate)
 							<a href="{{ route('templates.show', $build->runnerTemplate) }}">{{ $build->runnerTemplate->name }}</a>
-								@if ($build->version)
-									<span class="text-muted small">({{ $build->version }})</span>
+							@if ($build->version)
+								<span class="text-muted small">({{ $build->version }})</span>
 							@endif
 						@else
 							&mdash;
@@ -69,7 +63,10 @@
 			<div class="col-12">
 				<div class="card build-observer-card">
 					<div class="card-header">
-						<h3 class="card-title">Build output</h3>
+						<h3 class="card-title">
+							Build output
+							<span class="badge bg-{{ $build->status->colour() }}-lt ms-2" id="build-status">{{ $build->status->label() }}</span>
+						</h3>
 						@unless ($build->status->isFinished())
 							<div class="card-actions">
 								<span class="spinner-border spinner-border-sm text-blue" role="status"></span>
