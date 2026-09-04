@@ -112,11 +112,15 @@ class ProxmoxClient
         $config = $this->get('/nodes/'.$this->node().'/storage/'.$storage);
         $path = $config['path'] ?? null;
 
-        if (! is_string($path) || $path === '') {
-            throw new ProxmoxException("Storage {$storage} does not expose a node-local filesystem path.");
+        if (is_string($path) && $path !== '') {
+            return rtrim($path, '/');
         }
 
-        return rtrim($path, '/');
+        if (in_array($config['type'] ?? null, ['cifs', 'nfs', 'glusterfs', 'cephfs'], true)) {
+            return '/mnt/pve/'.trim($storage, '/');
+        }
+
+        throw new ProxmoxException("Storage {$storage} does not expose a node-local filesystem path.");
     }
 
     /**
