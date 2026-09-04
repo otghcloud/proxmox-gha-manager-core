@@ -2,6 +2,7 @@
 
 use Illuminate\Database\Migrations\Migration;
 use Illuminate\Database\Schema\Blueprint;
+use Illuminate\Support\Facades\Crypt;
 use Illuminate\Support\Facades\DB;
 use Illuminate\Support\Facades\Schema;
 use phpseclib3\Crypt\RSA;
@@ -95,9 +96,9 @@ return new class extends Migration
             'name' => 'Default Linux SSH',
             'os' => 'linux',
             'username' => 'runner',
-            'password' => encrypt(bin2hex(random_bytes(32))),
-            'private_key' => encrypt($key->toString('PKCS8')),
-            'public_key' => encrypt($key->getPublicKey()->toString('OpenSSH')),
+            'password' => Crypt::encrypt(bin2hex(random_bytes(32)), false),
+            'private_key' => Crypt::encrypt($key->toString('PKCS8'), false),
+            'public_key' => Crypt::encrypt($key->getPublicKey()->toString('OpenSSH'), false),
             'created_at' => now(),
             'updated_at' => now(),
         ]);
