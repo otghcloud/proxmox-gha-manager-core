@@ -317,8 +317,10 @@ class ProxmoxClient
             $payload['cipassword'] = $password;
         }
 
+        // `put()` sends this as a normal form field, which already percent-encodes the value;
+        // pre-encoding it here would double-encode the key and produce an unusable authorized_keys entry.
         if ($publicKey !== null && $publicKey !== '') {
-            $payload['sshkeys'] = rawurlencode(trim($publicKey));
+            $payload['sshkeys'] = trim($publicKey);
         }
 
         $this->put('/nodes/'.$this->node().'/qemu/'.$vmid.'/config', $payload);
