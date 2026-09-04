@@ -102,6 +102,24 @@ class ProxmoxClient
     }
 
     /**
+     * Return the node-local mount path for a configured storage.
+     *
+     * Proxmox's `import-from` parameter needs a filesystem path for an ISO
+     * volume; an `storage:iso/name` volume ID is rejected by the API.
+     */
+    public function storagePath(string $storage): string
+    {
+        $config = $this->get('/nodes/'.$this->node().'/storage/'.$storage);
+        $path = $config['path'] ?? null;
+
+        if (! is_string($path) || $path === '') {
+            throw new ProxmoxException("Storage {$storage} does not expose a node-local filesystem path.");
+        }
+
+        return rtrim($path, '/');
+    }
+
+    /**
      * Every ISO image available on this node, as Proxmox volume IDs.
      *
      * @return array<int, array{volid: string, storage: string, size: int|null}>
@@ -174,6 +192,19 @@ class ProxmoxClient
         $this->awaitTask($upid, "download {$filename}");
 
         return "{$storage}:iso/{$filename}";
+    }
+
+    public function downloadCloudImage(string $storage, string $url): string
+    {
+        $filename = basename((string) parse_url($url, PHP_URL_PATH));
+
+        if ($filename === '' || $filename === '.' || $filename === '/') {
+            throw new ProxmoxException("Could not determine a cloud image filename from {$url}");
+        }
+
+        $this->downloadImage($storage, $url);
+
+        return $this->storagePath($storage).'/template/iso/'.$filename;
     }
 
     /**

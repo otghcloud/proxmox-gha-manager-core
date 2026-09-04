@@ -36,7 +36,11 @@ class RecentRunnersDataTable extends DataTable
     {
         return $model->newQuery()
             ->with(['environment', 'pool', 'proxmoxTarget'])
-            ->whereIn('state', [RunnerState::Destroyed->value, RunnerState::Failed->value])
+            ->whereIn('state', [
+                RunnerState::Reaping->value,
+                RunnerState::Destroyed->value,
+                RunnerState::Failed->value,
+            ])
             ->orderByDesc('updated_at');
     }
 

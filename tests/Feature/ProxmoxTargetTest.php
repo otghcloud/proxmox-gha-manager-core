@@ -4,6 +4,7 @@ namespace Tests\Feature;
 
 use App\Models\ProxmoxTarget;
 use App\Models\User;
+use App\Services\Proxmox\ProxmoxClient;
 use App\Services\SettingsRepository;
 use Illuminate\Foundation\Testing\RefreshDatabase;
 use Illuminate\Support\Facades\Http;
@@ -87,6 +88,26 @@ class ProxmoxTargetTest extends TestCase
         ])->assertOk()->assertJsonPath('iso.0.name', 'local');
 
         $this->assertDatabaseCount('proxmox_targets', 0);
+    }
+
+    public function test_storage_path_reads_the_node_local_mount_path(): void
+    {
+        $target = ProxmoxTarget::create([
+            'name' => 'PVE 01',
+            'slug' => 'pve-01',
+            'proxmox_url' => 'https://pve.example.com:8006/api2/json',
+            'proxmox_node' => 'pve',
+            'proxmox_token_id' => 'root@pam!runner',
+            'proxmox_token_secret' => 'secret',
+        ]);
+
+        Http::fake([
+            'https://pve.example.com:8006/api2/json/nodes/pve/storage/nassmb' => Http::response([
+                'data' => ['path' => '/mnt/pve/nassmb'],
+            ]),
+        ]);
+
+        $this->assertSame('/mnt/pve/nassmb', (new ProxmoxClient($target))->storagePath('nassmb'));
     }
 
     public function test_node_connection_can_be_tested_from_the_nodes_page(): void

@@ -64,7 +64,7 @@ final class CloudimgBuilder implements BuilderInterface
                     throw new ProvisioningException('The cloud image builder requires an artifact file or URL and image storage.');
                 }
 
-                $source = $proxmox->downloadImage($isoStorage, $url);
+                $source = $proxmox->downloadCloudImage($isoStorage, $url);
             }
 
             if ($vmStorage === '') {
