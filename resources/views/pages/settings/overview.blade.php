@@ -55,7 +55,7 @@
 					<dt class="col-5">Application Version</dt>
 					<dd class="col-7">{{ app_version() }}</dd>
 					<dt class="col-5">Bundled Templates Version</dt>
-					<dd class="col-7">{{ $templatesVersion ? 'v'.$templatesVersion : '—' }}</dd>
+					<dd class="col-7">{{ $templatesVersion ?: '—' }}</dd>
 				</dl>
 			</div>
 		</div>

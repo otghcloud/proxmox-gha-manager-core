@@ -66,11 +66,6 @@
 				<label class="form-label required" for="boot_timeout_seconds">Boot timeout (s)</label>
 				<input class="form-control" id="boot_timeout_seconds" name="boot_timeout_seconds" required type="number" value="{{ old('boot_timeout_seconds', $pool->boot_timeout_seconds ?? 300) }}">
 			</div>
-			<div class="col-12">
-				<label class="form-label" for="runner_dir">Runner directory</label>
-				<input class="form-control" id="runner_dir" name="runner_dir" placeholder="/opt/actions-runner" type="text" value="{{ old('runner_dir', $pool->runner_dir) }}">
-				<small class="form-hint">Left blank, this defaults per OS: <code>/opt/actions-runner</code> or <code>C:\actions-runner</code>.</small>
-			</div>
 		</div>
 	</div>
 	<div class="card-footer text-end">

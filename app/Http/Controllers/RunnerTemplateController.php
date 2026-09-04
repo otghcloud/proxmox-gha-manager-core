@@ -18,6 +18,7 @@ use App\Services\Builds\ImageBuilder;
 use App\Services\Builds\Packer\TemplateCatalog;
 use App\Services\Builds\TemplateRebuilder;
 use App\Services\Proxmox\ProxmoxClient;
+use App\Services\Templates\TemplatePruner;
 use Illuminate\Http\RedirectResponse;
 use Illuminate\Support\Facades\DB;
 use Illuminate\View\View;
@@ -57,7 +58,13 @@ class RunnerTemplateController extends Controller
 
     public function show(RunnerTemplate $runnerTemplate): View
     {
-        $runnerTemplate->load(['environment', 'pools.proxmoxTargets', 'imageBuilds.proxmoxTarget', 'targetMappings']);
+        $runnerTemplate->load([
+            'environment',
+            'pools.proxmoxTargets',
+            'imageBuilds' => fn ($query) => $query->orderByDesc('id'),
+            'imageBuilds.proxmoxTarget',
+            'targetMappings',
+        ]);
         $buildingTargetIds = $runnerTemplate->imageBuilds()
             ->whereIn('status', [BuildStatus::Queued->value, BuildStatus::Running->value])
             ->pluck('proxmox_target_id')
@@ -171,7 +178,7 @@ class RunnerTemplateController extends Controller
             return back()->with('error', 'Configure a build target and an installation ISO for at least one node before building.');
         }
 
-        if (! $catalogEntry->isBuildEnabled()) {
+        if (! $catalogEntry->isBuildable()) {
             return back()->with('error', $catalogEntry->disabledReason() ?? 'The selected template is not buildable.');
         }
 
@@ -209,5 +216,41 @@ class RunnerTemplateController extends Controller
         return redirect()
             ->route('templates.show', $runnerTemplate)
             ->with('success', "Queued {$builds->count()} builds ({$request->mode()}). Each node keeps serving its current template until its rebuild succeeds.");
+    }
+
+    public function purgeSuperseded(RunnerTemplate $runnerTemplate, RetiredTemplateVmid $retired, TemplatePruner $pruner): RedirectResponse
+    {
+        if ($retired->runner_template_id !== $runnerTemplate->id || $retired->deleted_at !== null) {
+            return back()->with('error', 'That superseded template is no longer available to purge.');
+        }
+
+        if ($pruner->stillInUse($retired)) {
+            return back()->with('error', "VMID {$retired->vmid} still has runners cloned from it, so it was not purged.");
+        }
+
+        if (! $pruner->purge($retired)) {
+            return back()->with('error', "Could not destroy VMID {$retired->vmid}. Check the logs for details.");
+        }
+
+        return back()->with('success', "Purged superseded template VMID {$retired->vmid}.");
+    }
+
+    public function purgeAllSuperseded(RunnerTemplate $runnerTemplate, TemplatePruner $pruner): RedirectResponse
+    {
+        $result = $pruner->purgeForTemplate($runnerTemplate->id);
+
+        if ($result['purged'] === 0) {
+            return back()->with('error', $result['skipped'] > 0
+                ? 'Nothing was purged; every superseded template is still in use or could not be destroyed.'
+                : 'There was nothing to purge.');
+        }
+
+        $message = "Purged {$result['purged']} superseded template(s).";
+
+        if ($result['skipped'] > 0) {
+            $message .= " {$result['skipped']} were skipped because they are still in use.";
+        }
+
+        return back()->with('success', $message);
     }
 }

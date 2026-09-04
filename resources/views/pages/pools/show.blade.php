@@ -44,15 +44,11 @@
 							<dd class="col-7">{{ $pool->totalMinIdleRunners() }}</dd>
 							<dt class="col-5">Boot timeout</dt>
 							<dd class="col-7">{{ $pool->boot_timeout_seconds }}s</dd>
-							<dt class="col-5">Runner directory</dt>
-							<dd class="col-7"><code>{{ $pool->runnerDirectory() }}</code></dd>
 						</dl>
 					</div>
 				</div>
-			</div>
 
-			<div class="col-lg-8">
-				<div class="card">
+				<div class="card mt-3">
 					<div class="card-header"><h3 class="card-title">Labels</h3></div>
 					<div class="card-body">
 						@foreach ($pool->labels as $label)
@@ -63,8 +59,10 @@
 						</p>
 					</div>
 				</div>
+			</div>
 
-				<div class="card mt-3">
+			<div class="col-lg-8">
+				<div class="card">
 					<div class="card-header"><h3 class="card-title">Per-node limits</h3></div>
 					@if ($pool->proxmoxTargets->isEmpty())
 						<div class="card-body text-secondary">This pool has no nodes assigned, so it can never spawn a runner.</div>

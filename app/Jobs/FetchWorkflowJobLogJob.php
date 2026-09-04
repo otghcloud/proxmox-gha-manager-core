@@ -2,6 +2,7 @@
 
 namespace App\Jobs;
 
+use App\Models\LogEntry;
 use App\Models\WorkflowJob;
 use App\Services\GitHub\GitHubClient;
 use Illuminate\Contracts\Queue\ShouldQueue;
@@ -44,6 +45,8 @@ class FetchWorkflowJobLogJob implements ShouldQueue
 
         $path = $this->path($job);
         file_put_contents($path, $log);
+
+        LogEntry::store($job, LogEntry::CHANNEL_JOB, $log);
 
         $job->forceFill(['log_path' => $path, 'log_fetched_at' => now()])->save();
     }

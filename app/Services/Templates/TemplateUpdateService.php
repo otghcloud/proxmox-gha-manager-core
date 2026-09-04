@@ -44,7 +44,7 @@ class TemplateUpdateService
                 if (is_array($localCatalog) && is_array($localCatalog['templates'] ?? null)) {
                     foreach ($localCatalog['templates'] as $t) {
                         if (isset($t['id'])) {
-                            $localTemplates[$t['id']] = $t['version'] ?? '0.0.0';
+                            $localTemplates[$t['id']] = $t['metadata']['version'] ?? '0.0.0';
                         }
                     }
                 }
@@ -54,8 +54,7 @@ class TemplateUpdateService
             $remoteVersions = [];
             foreach ($remoteCatalog['templates'] as $remote) {
                 $id = $remote['id'] ?? null;
-                $target = $remote['target'] ?? null;
-                $remoteVersion = $remote['version'] ?? '0.0.0';
+                $remoteVersion = $remote['metadata']['version'] ?? '0.0.0';
                 $localVersion = $localTemplates[$id] ?? '0.0.0';
 
                 if ($id && $remoteVersion !== '0.0.0') {
@@ -66,7 +65,6 @@ class TemplateUpdateService
                     $updates[] = [
                         'id' => $id,
                         'name' => $remote['name'] ?? $id,
-                        'target' => $target ?? '',
                         'current_version' => $localVersion,
                         'new_version' => $remoteVersion,
                     ];
@@ -110,8 +108,8 @@ class TemplateUpdateService
         }
 
         foreach ($catalog['templates'] as $t) {
-            if (is_array($t) && ($t['id'] ?? null) === $id && ! empty($t['version'])) {
-                return (string) $t['version'];
+            if (is_array($t) && ($t['id'] ?? null) === $id && ! empty($t['metadata']['version'])) {
+                return (string) $t['metadata']['version'];
             }
         }
 

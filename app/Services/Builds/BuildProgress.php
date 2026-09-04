@@ -21,11 +21,11 @@ class BuildProgress
             return ['available' => false];
         }
 
-        $template = $entry->data();
+        $manifest = $this->catalog->buildManifest($entry);
 
-        $stages = $template['build_stages'] ?? [];
+        $stages = $this->stages($manifest);
 
-        if (! is_array($stages) || $stages === []) {
+        if ($stages === []) {
             return ['available' => false];
         }
 
@@ -36,7 +36,7 @@ class BuildProgress
         $stageCount = count($stages);
         $seenCount = count(array_intersect(array_column($stages, 'id'), $seen));
         $currentStage = null;
-        $estimatedMinutes = $this->estimatedMinutes($template);
+        $estimatedMinutes = $entry->estimatedMinutes();
 
         $stageStates = array_map(function (array $stage) use ($seen, $lastSeen, $finished, $succeeded, &$currentStage): array {
             $id = (string) ($stage['id'] ?? '');
@@ -56,6 +56,7 @@ class BuildProgress
                 'id' => $id,
                 'name' => (string) ($stage['name'] ?? $id),
                 'category' => (string) ($stage['category'] ?? 'build'),
+                'category_label' => (string) ($stage['category_label'] ?? 'Build'),
                 'state' => $state,
             ];
         }, $stages);
@@ -66,7 +67,7 @@ class BuildProgress
 
         return [
             'available' => true,
-            'target' => $entry->target(),
+            'target' => $entry->id(),
             'name' => $entry->name(),
             'estimated_minutes' => $estimatedMinutes,
             'estimated_duration' => $this->formatEstimatedMinutes($estimatedMinutes),
@@ -84,7 +85,80 @@ class BuildProgress
                 'name' => (string) ($currentStage['name'] ?? ''),
             ],
             'stages' => $stageStates,
+            'groups' => $this->groups($stageStates),
         ];
+    }
+
+    /**
+     * Stages are declared by the builder's manifest, flattened in display order.
+     *
+     * @param  array<string, mixed>  $manifest
+     * @return array<int, array<string, mixed>>
+     */
+    private function stages(array $manifest): array
+    {
+        $groups = $manifest['stage_groups'] ?? [];
+
+        if (! is_array($groups)) {
+            return [];
+        }
+
+        usort($groups, fn (array $a, array $b): int => ($a['display_order'] ?? 0) <=> ($b['display_order'] ?? 0));
+
+        $stages = [];
+
+        foreach ($groups as $group) {
+            foreach ($group['stages'] ?? [] as $stage) {
+                if (is_array($stage)) {
+                    $stage['category'] = $group['id'] ?? 'build';
+                    $stage['category_label'] = $group['label'] ?? str($group['id'] ?? 'build')->headline()->toString();
+                    $stages[] = $stage;
+                }
+            }
+        }
+
+        return $stages;
+    }
+
+    /**
+     * Groups the resolved stages for display, so completed groups can be collapsed.
+     *
+     * @param  array<int, array<string, mixed>>  $stageStates
+     * @return array<int, array<string, mixed>>
+     */
+    private function groups(array $stageStates): array
+    {
+        $groups = [];
+
+        foreach ($stageStates as $stage) {
+            $id = (string) $stage['category'];
+
+            $groups[$id] ??= [
+                'id' => $id,
+                'label' => (string) $stage['category_label'],
+                'stages' => [],
+            ];
+
+            $groups[$id]['stages'][] = $stage;
+        }
+
+        return array_values(array_map(function (array $group): array {
+            $states = array_column($group['stages'], 'state');
+            $group['completed_count'] = count(array_filter($states, fn (string $state): bool => $state === 'complete'));
+            $group['stage_count'] = count($states);
+
+            if (in_array('current', $states, true)) {
+                $group['state'] = 'current';
+            } elseif ($group['completed_count'] === $group['stage_count']) {
+                $group['state'] = 'complete';
+            } elseif ($group['completed_count'] > 0) {
+                $group['state'] = 'current';
+            } else {
+                $group['state'] = 'pending';
+            }
+
+            return $group;
+        }, $groups));
     }
 
     /**
@@ -107,13 +181,6 @@ class BuildProgress
         preg_match_all('/\[image-builder:stage:([a-z0-9-]+)\]/', $contents, $matches);
 
         return array_values(array_unique($matches[1] ?? []));
-    }
-
-    private function estimatedMinutes(array $template): ?int
-    {
-        $minutes = $template['build_requirements']['estimated_minutes'] ?? null;
-
-        return is_numeric($minutes) && (int) $minutes > 0 ? (int) $minutes : null;
     }
 
     private function formatEstimatedMinutes(?int $minutes): ?string

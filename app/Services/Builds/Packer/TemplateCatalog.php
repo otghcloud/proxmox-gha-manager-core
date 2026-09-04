@@ -57,17 +57,6 @@ class TemplateCatalog
         return null;
     }
 
-    public function entryForTarget(?string $target): ?TemplateCatalogEntry
-    {
-        foreach ($this->templates() as $entry) {
-            if (($entry['target'] ?? null) === $target) {
-                return new TemplateCatalogEntry($entry);
-            }
-        }
-
-        return null;
-    }
-
     /**
      * The template metadata published with the installed image-builder bundle.
      *
@@ -79,19 +68,37 @@ class TemplateCatalog
             fn (array $entry): array => $this->hydrate($entry),
             array_filter(
                 $this->catalog()['templates'] ?? [],
-                fn (mixed $entry): bool => is_array($entry) && is_string($entry['id'] ?? null) && is_string($entry['target'] ?? null),
+                fn (mixed $entry): bool => is_array($entry) && is_string($entry['id'] ?? null) && is_array($entry['builders'] ?? null),
             )
         ));
     }
 
     /**
-     * The absolute directory holding the target's Packer files, or null when it is not installed.
+     * The absolute directory holding the builder's files, or null when it is not installed.
      */
     public function templateDirectory(TemplateCatalogEntry $entry): ?string
     {
-        $directory = $this->root().'/'.trim($entry->templatePath(), '/');
+        $directory = $this->root().'/'.trim($entry->builderPath(), '/');
 
         return is_dir($directory) ? $directory : null;
+    }
+
+    /**
+     * The builder's stage manifest, which drives build progress reporting.
+     *
+     * @return array<string, mixed>
+     */
+    public function buildManifest(TemplateCatalogEntry $entry): array
+    {
+        $path = $this->root().'/'.ltrim($entry->buildManifestPath(), '/');
+
+        if (! is_readable($path)) {
+            return [];
+        }
+
+        $manifest = json_decode((string) file_get_contents($path), true);
+
+        return is_array($manifest) ? $manifest : [];
     }
 
     /**

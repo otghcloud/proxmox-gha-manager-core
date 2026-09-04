@@ -28,6 +28,11 @@ class GitHubAccount extends Model
         return ['webhook_id'];
     }
 
+    public function getBreadcrumbLabel(): string
+    {
+        return (string) ($this->login ?: $this->getKey());
+    }
+
     protected function casts(): array
     {
         return [

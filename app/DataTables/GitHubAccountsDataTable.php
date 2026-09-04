@@ -55,7 +55,7 @@ class GitHubAccountsDataTable extends DataTable
         return [
             Column::make('login')->title('Login'),
             Column::make('account_type')->title('Type')->width(100),
-            Column::make('webhook_id')->title('Webhook ID')->width(160),
+            Column::make('webhook_id')->title('Webhook ID')->width(320)->addClass('text-nowrap'),
             Column::make('environments_count')->title('Environments')->width(120)->searchable(false),
             Column::computed('actions')->width(80)->addClass('text-end'),
         ];

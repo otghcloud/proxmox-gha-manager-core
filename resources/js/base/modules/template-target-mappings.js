@@ -31,6 +31,9 @@ export default function initTemplateTargetMappings() {
 
     const selectedTemplate = () => templates.find((template) => template.id === templateSelect?.value);
 
+    // Packer is the only implemented builder; cloudimg is published but not yet buildable.
+    const selectedBuilder = (template) => template?.builders?.packer ?? Object.values(template?.builders ?? {})[0] ?? {};
+
     const renderDetails = () => {
         const template = selectedTemplate();
 
@@ -40,14 +43,15 @@ export default function initTemplateTargetMappings() {
             return;
         }
 
-        const requirements = template.build_requirements || {};
+        const requirements = selectedBuilder(template).build_requirements || {};
         details.hidden = false;
-        details.innerHTML = `<div class="alert alert-info mb-0"><strong>${esc(template.name)}</strong>${template.description ? ` <span class="text-secondary">${esc(template.description)}</span>` : ''}<div class="small mt-1">Version ${esc(template.version || 'unknown')} &middot; ${esc(requirements.cpu_cores || '—')} cores &middot; ${esc(requirements.memory_mb || '—')} MB memory &middot; ${esc(requirements.disk_gb || '—')} GB disk${requirements.estimated_minutes ? ` &middot; approximately ${esc(requirements.estimated_minutes)} minutes` : ''}</div></div>`;
+        details.innerHTML = `<div class="alert alert-info mb-0"><strong>${esc(template.name)}</strong>${template.description ? ` <span class="text-secondary">${esc(template.description)}</span>` : ''}<div class="small mt-1">Version ${esc(template.metadata?.version || 'unknown')} &middot; ${esc(requirements.cpu_cores || '—')} cores &middot; ${esc(requirements.memory_mb || '—')} MB memory &middot; ${esc(requirements.disk_gb || '—')} GB disk${requirements.estimated_minutes ? ` &middot; approximately ${esc(requirements.estimated_minutes)} minutes` : ''}</div></div>`;
     };
 
     const render = () => {
         const template = selectedTemplate();
-        const requirements = template?.build_requirements || {};
+        const builder = selectedBuilder(template);
+        const requirements = builder.build_requirements || {};
         const selected = [...root.querySelectorAll('[data-target-toggle]:checked')].map((input) => Number(input.value));
         rows.innerHTML = selected.map((id) => {
             const target = catalog.find((item) => item.id === id);
@@ -55,7 +59,7 @@ export default function initTemplateTargetMappings() {
             return `<tr data-target-row="${id}">
                 <td>${esc(target?.name)} <span class="text-secondary">(${esc(target?.node)})</span></td>
                 <td><select class="form-select form-select-sm" data-iso-select data-target-id="${id}" data-iso-url="${esc(target?.isoUrl)}" name="mappings[${id}][build_iso_file]"><option value="${esc(mapping.buildIsoFile || '')}">${mapping.buildIsoFile ? esc(mapping.buildIsoFile) : 'Load ISO options'}</option></select><small class="text-secondary" data-iso-status></small></td>
-                <td><input class="form-control form-control-sm" name="mappings[${id}][build_iso_url]" type="url" placeholder="https://..." value="${esc(mapping.buildIsoUrl || template?.iso_url || '')}"></td>
+                <td><input class="form-control form-control-sm" name="mappings[${id}][build_iso_url]" type="url" placeholder="https://..." value="${esc(mapping.buildIsoUrl || builder.artifact?.url || '')}"></td>
                 <td><input class="form-control form-control-sm" name="mappings[${id}][build_cores]" type="number" min="1" value="${esc(mapping.buildCores || requirements.cpu_cores || '')}"></td>
                 <td><input class="form-control form-control-sm" name="mappings[${id}][build_memory_mb]" type="number" min="1024" value="${esc(mapping.buildMemoryMb || requirements.memory_mb || '')}"></td>
                 <td><input class="form-control form-control-sm" name="mappings[${id}][build_disk_gb]" type="number" min="20" value="${esc(mapping.buildDiskGb || requirements.disk_gb || '')}"></td>
@@ -75,8 +79,11 @@ export default function initTemplateTargetMappings() {
             if (!response.ok) throw new Error(payload.error || 'Proxmox did not respond.');
             const current = select.value;
             select.innerHTML = '<option value="">Select installation ISO</option>' + (payload.images || []).map((image) => `<option value="${esc(image.volid)}">${esc(image.volid)}</option>`).join('');
-            const isoFilename = selectedTemplate()?.iso_url?.split('/').pop();
-            const matchingIso = (payload.images || []).find((image) => image.volid.endsWith(`/${isoFilename}`));
+            const artifact = selectedBuilder(selectedTemplate()).artifact || {};
+            const isoFilename = artifact.file || artifact.url?.split('/').pop();
+            const matchingIso = isoFilename
+                ? (payload.images || []).find((image) => image.volid.endsWith(`/${isoFilename}`))
+                : undefined;
             select.value = current || matchingIso?.volid || '';
             select.dataset.loaded = 'true';
             status.textContent = `${(payload.images || []).length} ISO(s) found.`;

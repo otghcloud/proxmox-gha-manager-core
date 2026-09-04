@@ -60,7 +60,9 @@ class RunnerImagesLocatorTest extends TestCase
     {
         $this->writeCatalog(null);
 
-        $this->assertNull((new RunnerImagesLocator)->scriptsRoot(new TemplateCatalogEntry(['packer' => ['scripts_root_required' => false, 'runner_images_directory' => 'images/windows']])));
+        $this->assertNull((new RunnerImagesLocator)->scriptsRoot(new TemplateCatalogEntry([
+            'builders' => ['packer' => ['provisioner' => ['scripts_root_required' => false, 'runner_images_directory' => 'images/windows']]],
+        ])));
     }
 
     public function test_it_fails_when_nothing_is_bundled_and_no_commit_is_pinned(): void
@@ -74,6 +76,8 @@ class RunnerImagesLocatorTest extends TestCase
 
     private function ubuntuSlim(): TemplateCatalogEntry
     {
-        return new TemplateCatalogEntry(['packer' => ['scripts_root_required' => true, 'runner_images_directory' => 'images/ubuntu-slim']]);
+        return new TemplateCatalogEntry([
+            'builders' => ['packer' => ['provisioner' => ['scripts_root_required' => true, 'runner_images_directory' => 'images/ubuntu-slim']]],
+        ]);
     }
 }

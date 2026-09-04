@@ -6,6 +6,7 @@ use App\Enums\BuildStatus;
 use Illuminate\Database\Eloquent\Factories\HasFactory;
 use Illuminate\Database\Eloquent\Model;
 use Illuminate\Database\Eloquent\Relations\BelongsTo;
+use Illuminate\Database\Eloquent\Relations\MorphMany;
 
 class ImageBuild extends Model
 {
@@ -18,6 +19,7 @@ class ImageBuild extends Model
         return [
             'status' => BuildStatus::class,
             'exit_code' => 'integer',
+            'process_pid' => 'integer',
             'started_at' => 'datetime',
             'finished_at' => 'datetime',
             'proxmox_target_id' => 'integer',
@@ -45,5 +47,20 @@ class ImageBuild extends Model
     public function proxmoxTarget(): BelongsTo
     {
         return $this->belongsTo(ProxmoxTarget::class);
+    }
+
+    public function logEntries(): MorphMany
+    {
+        return $this->morphMany(LogEntry::class, 'loggable');
+    }
+
+    public function getBreadcrumbLabel(): string
+    {
+        return (string) ($this->template_catalog_id ?: 'Build '.$this->getKey());
+    }
+
+    public function storedLog(): ?LogEntry
+    {
+        return $this->logEntries()->where('channel', LogEntry::CHANNEL_BUILD)->first();
     }
 }

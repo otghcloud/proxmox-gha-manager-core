@@ -16,22 +16,36 @@ class BuildProgressTest extends TestCase
         parent::setUp();
 
         $this->directory = sys_get_temp_dir().'/build-progress-'.bin2hex(random_bytes(4));
-        mkdir($this->directory, 0755, true);
+        mkdir($this->directory.'/templates/ubuntu/ubuntu2404/packer', 0755, true);
 
         config(['builds.image_builder_path' => $this->directory]);
 
         file_put_contents($this->directory.'/templates.json', json_encode([
             'templates' => [[
-                'id' => 'ubuntu-24.04-proxmox-x64',
-                'target' => 'pmx-ubuntu2404',
-                'name' => 'Ubuntu 24.04 Proxmox',
-                'build_requirements' => ['estimated_minutes' => 75],
-                'build_stages' => [
-                    ['id' => 'prepare', 'name' => 'Prepare', 'marker' => '[image-builder:stage:prepare]'],
-                    ['id' => 'install-tools', 'name' => 'Install tools', 'marker' => '[image-builder:stage:install-tools]'],
-                    ['id' => 'cleanup', 'name' => 'Cleanup', 'marker' => '[image-builder:stage:cleanup]'],
-                ],
+                'id' => 'ubuntu-24.04',
+                'name' => 'Ubuntu 24.04',
+                'builders' => ['packer' => [
+                    'buildable' => true,
+                    'type' => 'packer',
+                    'path' => 'templates/ubuntu/ubuntu2404/packer',
+                    'build_manifest' => 'templates/ubuntu/ubuntu2404/packer/build.json',
+                    'build_requirements' => ['estimated_minutes' => 75],
+                ]],
             ]],
+        ], JSON_THROW_ON_ERROR));
+
+        file_put_contents($this->directory.'/templates/ubuntu/ubuntu2404/packer/build.json', json_encode([
+            'stage_groups' => [
+                ['id' => 'configure', 'display_order' => 1, 'stages' => [
+                    ['id' => 'prepare', 'name' => 'Prepare', 'marker' => '[image-builder:stage:prepare]'],
+                ]],
+                ['id' => 'install', 'display_order' => 2, 'stages' => [
+                    ['id' => 'install-tools', 'name' => 'Install tools', 'marker' => '[image-builder:stage:install-tools]'],
+                ]],
+                ['id' => 'cleanup', 'display_order' => 3, 'stages' => [
+                    ['id' => 'cleanup', 'name' => 'Cleanup', 'marker' => '[image-builder:stage:cleanup]'],
+                ]],
+            ],
         ], JSON_THROW_ON_ERROR));
     }
 
@@ -57,7 +71,7 @@ class BuildProgressTest extends TestCase
         file_put_contents($log, "first\n[image-builder:stage:prepare] Prepare\n[image-builder:stage:install-tools] Install tools\n");
 
         $progress = (new BuildProgress)->forBuild(new ImageBuild([
-            'template_catalog_id' => 'ubuntu-24.04-proxmox-x64',
+            'template_catalog_id' => 'ubuntu-24.04',
             'status' => BuildStatus::Running,
             'log_path' => $log,
         ]));
@@ -78,7 +92,7 @@ class BuildProgressTest extends TestCase
         file_put_contents($log, "[image-builder:stage:prepare] Prepare\n");
 
         $progress = (new BuildProgress)->forBuild(new ImageBuild([
-            'template_catalog_id' => 'ubuntu-24.04-proxmox-x64',
+            'template_catalog_id' => 'ubuntu-24.04',
             'status' => BuildStatus::Succeeded,
             'log_path' => $log,
         ]));
@@ -100,29 +114,66 @@ class BuildProgressTest extends TestCase
         $this->assertFalse($progress['available']);
     }
 
-    public function test_stages_are_read_from_the_per_template_metadata_file(): void
+    public function test_stages_are_grouped_with_a_state_per_group(): void
     {
-        $templateDirectory = $this->directory.'/templates/proxmox/ubuntu/ubuntu-slim';
-        mkdir($templateDirectory, 0755, true);
+        $log = $this->directory.'/build.log';
+        file_put_contents($log, "[image-builder:stage:prepare] Prepare\n[image-builder:stage:install-tools] Install tools\n");
 
-        // The published catalog carries no build_stages of its own, only a pointer to the template.
+        $progress = (new BuildProgress)->forBuild(new ImageBuild([
+            'template_catalog_id' => 'ubuntu-24.04',
+            'status' => BuildStatus::Running,
+            'log_path' => $log,
+        ]));
+
+        $this->assertSame(['configure', 'install', 'cleanup'], array_column($progress['groups'], 'id'));
+        $this->assertSame(['Configure', 'Install', 'Cleanup'], array_column($progress['groups'], 'label'));
+
+        // configure is finished, install holds the current stage, cleanup has not started.
+        $this->assertSame(['complete', 'current', 'pending'], array_column($progress['groups'], 'state'));
+        $this->assertSame([1, 0, 0], array_column($progress['groups'], 'completed_count'));
+        $this->assertSame([1, 1, 1], array_column($progress['groups'], 'stage_count'));
+    }
+
+    public function test_every_group_is_complete_once_the_build_succeeds(): void
+    {
+        $log = $this->directory.'/build.log';
+        file_put_contents($log, "[image-builder:stage:prepare] Prepare\n");
+
+        $progress = (new BuildProgress)->forBuild(new ImageBuild([
+            'template_catalog_id' => 'ubuntu-24.04',
+            'status' => BuildStatus::Succeeded,
+            'log_path' => $log,
+        ]));
+
+        $this->assertSame(['complete', 'complete', 'complete'], array_column($progress['groups'], 'state'));
+    }
+
+    public function test_stages_are_read_from_the_builder_manifest(): void
+    {
+        $builderDirectory = $this->directory.'/templates/ubuntu/ubuntu-slim/packer';
+        mkdir($builderDirectory, 0755, true);
+
+        // The published catalog carries no stages of its own, only a pointer to the builder manifest.
         file_put_contents($this->directory.'/templates.json', json_encode([
             'templates' => [[
-                'id' => 'ubuntu-slim-proxmox-x64',
-                'target' => 'pmx-ubuntu-slim',
-                'name' => 'Ubuntu Slim Proxmox',
-                'template_json_path' => 'templates/proxmox/ubuntu/ubuntu-slim/template.json',
-                'build_requirements' => ['estimated_minutes' => 25],
+                'id' => 'ubuntu-slim',
+                'name' => 'Ubuntu Slim',
+                'builders' => ['packer' => [
+                    'buildable' => true,
+                    'type' => 'packer',
+                    'path' => 'templates/ubuntu/ubuntu-slim/packer',
+                    'build_manifest' => 'templates/ubuntu/ubuntu-slim/packer/build.json',
+                    'build_requirements' => ['estimated_minutes' => 25],
+                ]],
             ]],
         ], JSON_THROW_ON_ERROR));
 
-        file_put_contents($templateDirectory.'/template.json', json_encode([
-            'template_catalog_id' => 'ubuntu-slim-proxmox-x64',
-            'name' => 'Ubuntu Slim Proxmox',
-            'build_requirements' => ['estimated_minutes' => 25],
-            'build_stages' => [
-                ['id' => 'prepare-image-generation', 'name' => 'Prepare image generation workspace'],
-                ['id' => 'install-vital-apt-packages', 'name' => 'Install vital apt packages'],
+        file_put_contents($builderDirectory.'/build.json', json_encode([
+            'stage_groups' => [
+                ['id' => 'configure', 'display_order' => 1, 'stages' => [
+                    ['id' => 'prepare-image-generation', 'name' => 'Prepare image generation workspace'],
+                    ['id' => 'install-vital-apt-packages', 'name' => 'Install vital apt packages'],
+                ]],
             ],
         ], JSON_THROW_ON_ERROR));
 
@@ -130,7 +181,7 @@ class BuildProgressTest extends TestCase
         file_put_contents($log, "[image-builder:stage:prepare-image-generation] Prepare\n");
 
         $progress = (new BuildProgress)->forBuild(new ImageBuild([
-            'template_catalog_id' => 'ubuntu-slim-proxmox-x64',
+            'template_catalog_id' => 'ubuntu-slim',
             'status' => BuildStatus::Running,
             'log_path' => $log,
         ]));

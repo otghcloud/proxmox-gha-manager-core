@@ -2,6 +2,7 @@
 
 namespace App\Helpers;
 
+use Illuminate\Database\Eloquent\Model;
 use Illuminate\Support\Facades\Request;
 
 class BreadcrumbHelpers
@@ -9,8 +10,8 @@ class BreadcrumbHelpers
     /**
      * Build breadcrumbs from the current URL path, humanising each segment.
      *
-     * Numeric segments are replaced with the preceding segment's singular form so
-     * `/environments/4/pools` reads "Environments / Environment / Pools".
+     * Segments that the router resolved to a model are replaced with that record's own label,
+     * so `/workflows/runners/12` reads "Home / Workflows / Runners / gha-mtn5sbymd0nvbpji".
      *
      * @return array<int, array{label: string, href: string|null, active: bool}>
      */
@@ -30,13 +31,14 @@ class BreadcrumbHelpers
 
         $path = '';
         $count = count($segments);
+        $bound = self::boundModels();
 
         foreach ($segments as $index => $segment) {
             $path .= '/'.$segment;
             $isLast = $index === $count - 1;
 
             $crumbs[] = [
-                'label' => self::label($segment, $segments[$index - 1] ?? null),
+                'label' => self::label($segment, $segments[$index - 1] ?? null, $bound),
                 'href' => $isLast ? null : url($path),
                 'active' => $isLast,
             ];
@@ -45,8 +47,39 @@ class BreadcrumbHelpers
         return $crumbs;
     }
 
-    private static function label(string $segment, ?string $previous): string
+    /**
+     * Models already resolved by route model binding, keyed by the segment they appear as.
+     *
+     * @return array<string, Model>
+     */
+    private static function boundModels(): array
     {
+        $models = [];
+
+        foreach (request()->route()?->parameters() ?? [] as $parameter) {
+            if ($parameter instanceof Model) {
+                $models[(string) $parameter->getRouteKey()] = $parameter;
+            }
+        }
+
+        return $models;
+    }
+
+    /**
+     * @param  array<string, Model>  $bound
+     */
+    private static function label(string $segment, ?string $previous, array $bound): string
+    {
+        $model = $bound[$segment] ?? null;
+
+        if ($model !== null && method_exists($model, 'getBreadcrumbLabel')) {
+            $label = trim($model->getBreadcrumbLabel());
+
+            if ($label !== '') {
+                return $label;
+            }
+        }
+
         if (ctype_digit($segment)) {
             return $previous === null
                 ? $segment

@@ -62,7 +62,7 @@ class RunnerTemplateRequest extends FormRequest
 
             if ($entry === null) {
                 $validator->errors()->add('template_catalog_id', 'The selected template is not present in the installed catalog.');
-            } elseif (! $entry->isBuildEnabled()) {
+            } elseif (! $entry->isBuildable()) {
                 $validator->errors()->add('template_catalog_id', $entry->disabledReason() ?? 'The selected template is not buildable.');
             }
 
