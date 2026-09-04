@@ -110,6 +110,26 @@ class ProxmoxTargetTest extends TestCase
         $this->assertSame('/mnt/pve/nassmb', (new ProxmoxClient($target))->storagePath('nassmb'));
     }
 
+    public function test_storage_path_uses_the_standard_mount_for_cifs_storage(): void
+    {
+        $target = ProxmoxTarget::create([
+            'name' => 'PVE 01',
+            'slug' => 'pve-01',
+            'proxmox_url' => 'https://pve.example.com:8006/api2/json',
+            'proxmox_node' => 'pve',
+            'proxmox_token_id' => 'root@pam!runner',
+            'proxmox_token_secret' => 'secret',
+        ]);
+
+        Http::fake([
+            'https://pve.example.com:8006/api2/json/nodes/pve/storage/nassmb' => Http::response([
+                'data' => ['type' => 'cifs'],
+            ]),
+        ]);
+
+        $this->assertSame('/mnt/pve/nassmb', (new ProxmoxClient($target))->storagePath('nassmb'));
+    }
+
     public function test_node_connection_can_be_tested_from_the_nodes_page(): void
     {
         $target = ProxmoxTarget::create([
