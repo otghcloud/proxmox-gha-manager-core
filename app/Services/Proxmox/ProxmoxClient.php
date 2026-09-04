@@ -21,6 +21,11 @@ class ProxmoxClient
 
     public const MANAGED_BY = 'pmx-gha-manager';
 
+    /** Cached ticket-auth credentials; populated lazily and reused for the life of this instance. */
+    private ?string $ticket = null;
+
+    private ?string $csrfToken = null;
+
     public function __construct(private readonly Environment|ProxmoxTarget $connection) {}
 
     /**
@@ -533,9 +538,66 @@ class ProxmoxClient
             ? ($this->connection->proxmox_ca_bundle ?: true)
             : false;
 
+        if ($this->usesPasswordAuth()) {
+            $this->authenticate($verify);
+
+            return Http::withHeaders(array_filter([
+                'CSRFPreventionToken' => $this->csrfToken,
+            ]))
+                ->withCookies(['PVEAuthCookie' => $this->ticket], $this->host())
+                ->withOptions(['verify' => $verify])
+                ->timeout(30);
+        }
+
         return Http::withHeaders([
             'Authorization' => "PVEAPIToken={$this->connection->proxmox_token_id}={$this->connection->proxmox_token_secret}",
         ])->withOptions(['verify' => $verify])->timeout(30);
+    }
+
+    private function usesPasswordAuth(): bool
+    {
+        return ($this->connection->proxmox_auth_realm ?? ProxmoxTarget::AUTH_REALM_API_TOKEN) === ProxmoxTarget::AUTH_REALM_PASSWORD;
+    }
+
+    /**
+     * Fetch (and cache) an auth ticket via username/password. Tickets are valid for ~2 hours, so
+     * this only re-authenticates once per client instance rather than on every request. Some
+     * Proxmox endpoints (e.g. arbitrary import-from filesystem paths) reject API tokens outright
+     * and require a standard login, hence supporting both auth realms.
+     *
+     * @param  bool|string  $verify
+     */
+    private function authenticate($verify): void
+    {
+        if ($this->ticket !== null) {
+            return;
+        }
+
+        $response = Http::withOptions(['verify' => $verify])
+            ->timeout(30)
+            ->asForm()
+            ->post($this->url('/access/ticket'), [
+                'username' => $this->connection->proxmox_username,
+                'password' => $this->connection->proxmox_password,
+            ]);
+
+        if ($response->failed()) {
+            throw new ProxmoxException('Proxmox authentication failed with HTTP '.$response->status().': '.trim($response->body()));
+        }
+
+        $data = $response->json('data');
+
+        $this->ticket = $data['ticket'] ?? null;
+        $this->csrfToken = $data['CSRFPreventionToken'] ?? null;
+
+        if ($this->ticket === null) {
+            throw new ProxmoxException('Proxmox authentication response did not include a ticket.');
+        }
+    }
+
+    private function host(): string
+    {
+        return (string) parse_url($this->connection->proxmox_url, PHP_URL_HOST);
     }
 
     private function url(string $path): string

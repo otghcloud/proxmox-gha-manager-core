@@ -10,6 +10,7 @@ use App\Services\Proxmox\ProxmoxClient;
 use Illuminate\Http\JsonResponse;
 use Illuminate\Http\RedirectResponse;
 use Illuminate\Http\Request;
+use Illuminate\Validation\Rule;
 use Illuminate\View\View;
 use Throwable;
 
@@ -37,31 +38,42 @@ class ProxmoxTargetController extends Controller
 
     public function standaloneStore(ProxmoxTargetRequest $request): RedirectResponse
     {
-        $target = ProxmoxTarget::create($request->validated());
+        $target = ProxmoxTarget::create($this->fillAuthDefaults($request->validated()));
 
         return redirect()->route('nodes.index')->with('success', "Proxmox target {$target->name} created.");
     }
 
     public function storageOptions(Request $request): JsonResponse
     {
+        $isPasswordAuth = $request->input('proxmox_auth_realm') === ProxmoxTarget::AUTH_REALM_PASSWORD;
+
         $data = $request->validate([
             'target_id' => ['nullable', 'integer', 'exists:proxmox_targets,id'],
             'proxmox_url' => ['required', 'url', 'max:255'],
             'proxmox_node' => ['required', 'string', 'max:255'],
-            'proxmox_token_id' => ['required', 'string', 'max:255'],
+            'proxmox_auth_realm' => ['nullable', Rule::in([ProxmoxTarget::AUTH_REALM_API_TOKEN, ProxmoxTarget::AUTH_REALM_PASSWORD])],
+            'proxmox_token_id' => [$isPasswordAuth ? 'nullable' : 'required', 'string', 'max:255'],
             'proxmox_token_secret' => ['nullable', 'string'],
+            'proxmox_username' => [$isPasswordAuth ? 'required' : 'nullable', 'string', 'max:255'],
+            'proxmox_password' => ['nullable', 'string'],
             'proxmox_verify_tls' => ['boolean'],
             'proxmox_ca_bundle' => ['nullable', 'string', 'max:255'],
             'proxmox_resource_pool' => ['nullable', 'string', 'max:255'],
         ]);
 
-        if (blank($data['proxmox_token_secret'] ?? null) && ! empty($data['target_id'])) {
-            $existing = ProxmoxTarget::find($data['target_id']);
-            $data['proxmox_token_secret'] = $existing?->proxmox_token_secret;
+        $data['proxmox_auth_realm'] = $isPasswordAuth ? ProxmoxTarget::AUTH_REALM_PASSWORD : ProxmoxTarget::AUTH_REALM_API_TOKEN;
+
+        $existing = ! empty($data['target_id']) ? ProxmoxTarget::find($data['target_id']) : null;
+        $secretField = $isPasswordAuth ? 'proxmox_password' : 'proxmox_token_secret';
+
+        if (blank($data[$secretField] ?? null) && $existing !== null) {
+            $data[$secretField] = $existing->{$secretField};
         }
 
-        if (blank($data['proxmox_token_secret'] ?? null)) {
-            return response()->json(['message' => 'API token secret is required.'], 422);
+        if (blank($data[$secretField] ?? null)) {
+            $label = $isPasswordAuth ? 'Password' : 'API token secret';
+
+            return response()->json(['message' => "{$label} is required."], 422);
         }
 
         try {
@@ -101,9 +113,28 @@ class ProxmoxTargetController extends Controller
         if (blank($data['proxmox_token_secret'] ?? null)) {
             unset($data['proxmox_token_secret']);
         }
+        if (blank($data['proxmox_password'] ?? null)) {
+            unset($data['proxmox_password']);
+        }
         $target->update($data);
 
         return redirect()->route('nodes.index')->with('success', 'Proxmox target updated.');
+    }
+
+    /**
+     * `proxmox_token_id`/`proxmox_token_secret` are non-nullable columns; when creating a target
+     * with the `password` realm they're simply unused, so default them to an empty string rather
+     * than omitting them from the insert.
+     *
+     * @param  array<string, mixed>  $data
+     * @return array<string, mixed>
+     */
+    private function fillAuthDefaults(array $data): array
+    {
+        $data['proxmox_token_id'] ??= '';
+        $data['proxmox_token_secret'] ??= '';
+
+        return $data;
     }
 
     public function standaloneDestroy(ProxmoxTarget $target): RedirectResponse
