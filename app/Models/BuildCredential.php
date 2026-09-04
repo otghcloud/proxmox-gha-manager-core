@@ -36,4 +36,14 @@ class BuildCredential extends Model
     {
         return $this->belongsTo(Credential::class);
     }
+
+    public function hasAuthenticationMaterial(): bool
+    {
+        return filled($this->password) || (filled($this->private_key) && filled($this->public_key));
+    }
+
+    public function resolvedUsername(?string $fallback = null): string
+    {
+        return (string) ($this->username ?: $fallback ?: 'runner');
+    }
 }
