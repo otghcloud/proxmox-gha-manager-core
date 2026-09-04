@@ -93,7 +93,7 @@ class TemplateRebuilder
                     'image_build_id' => $build->id,
                     'credential_id' => $credential->id,
                     'os' => $credential->os->value,
-                    'username' => $credential->username(app(SettingsRepository::class)->defaultRunnerUsername()),
+                    'username' => $credential->resolvedUsername(app(SettingsRepository::class)->defaultRunnerUsername()),
                     'password' => $credential->password,
                     'private_key' => $credential->private_key,
                     'public_key' => $credential->public_key,
