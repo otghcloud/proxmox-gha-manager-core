@@ -4,6 +4,7 @@ namespace App\Http\Controllers;
 
 use App\DataTables\BuildsDataTable;
 use App\Models\ImageBuild;
+use App\Services\Builds\BuildCanceller;
 use App\Services\Builds\BuildProgress;
 use App\Services\Builds\Packer\TemplateCatalog;
 use Illuminate\Http\JsonResponse;
@@ -70,6 +71,17 @@ class BuildController extends Controller
         ]);
     }
 
+    public function cancel(ImageBuild $imageBuild, BuildCanceller $canceller): RedirectResponse
+    {
+        if ($imageBuild->status->isFinished()) {
+            return back()->with('error', 'That build has already finished.');
+        }
+
+        $canceller->cancel($imageBuild, 'force killed from the web interface');
+
+        return back()->with('success', 'Build force killed.');
+    }
+
     public function destroy(ImageBuild $imageBuild): RedirectResponse
     {
         if (! $imageBuild->status->isFinished()) {
@@ -91,8 +103,10 @@ class BuildController extends Controller
 
     private function readLog(ImageBuild $build): ?string
     {
-        return $build->log_path && is_readable($build->log_path)
-            ? (string) file_get_contents($build->log_path)
-            : null;
+        if ($build->log_path && is_readable($build->log_path)) {
+            return (string) file_get_contents($build->log_path);
+        }
+
+        return $build->storedLog()?->body;
     }
 }

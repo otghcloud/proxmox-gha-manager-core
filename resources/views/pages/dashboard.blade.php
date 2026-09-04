@@ -75,7 +75,7 @@
 				</div>
 				<div class="col-lg-6">
 					<div class="card">
-						<div class="card-header"><h3 class="card-title">Recently finished</h3></div>
+						<div class="card-header"><h3 class="card-title">Runner History</h3></div>
 						<div class="table-responsive">
 							{!! $recentRunnersTable->table(['class' => 'table table-vcenter card-table']) !!}
 						</div>

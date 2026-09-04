@@ -3,6 +3,7 @@
 namespace App\Models;
 
 use App\Enums\PoolOs;
+use App\Models\Concerns\HasBreadcrumbLabel;
 use App\Services\Builds\Packer\TemplateCatalog;
 use Illuminate\Database\Eloquent\Collection;
 use Illuminate\Database\Eloquent\Factories\HasFactory;
@@ -14,6 +15,7 @@ use Illuminate\Support\Str;
 
 class RunnerTemplate extends Model
 {
+    use HasBreadcrumbLabel;
     use HasFactory;
 
     protected $guarded = ['id'];
@@ -63,7 +65,7 @@ class RunnerTemplate extends Model
     {
         $entry = app(TemplateCatalog::class)->entryForId($this->template_catalog_id);
 
-        if ($entry === null || ! $entry->isBuildEnabled()) {
+        if ($entry === null || ! $entry->isBuildable()) {
             return new Collection;
         }
 

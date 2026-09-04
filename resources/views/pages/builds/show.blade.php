@@ -4,6 +4,17 @@
 @section('page-pretitle', 'Builds')
 @section('page-title', $catalogEntry?->name() ?? $build->template_catalog_id)
 
+@section('page-actions')
+	@unless ($build->status->isFinished())
+		<div class="col-auto ms-auto d-print-none">
+			<form action="{{ route('builds.cancel', $build) }}" method="POST" onsubmit="return confirm('Force kill this build? The Packer process is terminated immediately.');">
+				@csrf
+				<button class="btn btn-danger"><x-action-content icon="fa-solid fa-skull" label="Force kill" /></button>
+			</form>
+		</div>
+	@endunless
+@endsection
+
 @section('page-content')
 	<div class="container-xl">
 		<div class="card-group mb-3">
@@ -25,8 +36,8 @@
 					<div class="h3 mb-0 text-truncate">
 						@if ($build->runnerTemplate)
 							<a href="{{ route('templates.show', $build->runnerTemplate) }}">{{ $build->runnerTemplate->name }}</a>
-							@if ($build->runnerTemplate->target_mapping?->pivot->version)
-								<span class="text-muted small">(v{{ $build->runnerTemplate->target_mapping->pivot->version }})</span>
+								@if ($build->version)
+									<span class="text-muted small">({{ $build->version }})</span>
 							@endif
 						@else
 							&mdash;
@@ -91,10 +102,21 @@
 											<div class="progress-bar" data-build-progress-bar style="width: {{ $progress['percent'] }}%"></div>
 										</div>
 										<div class="build-stage-list">
-											@foreach ($progress['stages'] as $stage)
-												<div class="build-stage build-stage-{{ $stage['state'] }}" data-build-stage-id="{{ $stage['id'] }}">
-													<span class="build-stage-dot"></span>
-													<span>{{ $stage['name'] }}</span>
+											@foreach ($progress['groups'] as $group)
+												<div class="build-stage-group build-stage-group-{{ $group['state'] }}" data-build-stage-group="{{ $group['id'] }}">
+													<button class="build-stage-group-header" type="button" data-build-stage-toggle aria-expanded="{{ $group['state'] === 'complete' ? 'false' : 'true' }}">
+														<i class="fa-solid fa-chevron-down build-stage-group-caret"></i>
+														<span class="build-stage-group-label">{{ $group['label'] }}</span>
+														<span class="build-stage-group-count text-secondary">{{ $group['completed_count'] }} / {{ $group['stage_count'] }}</span>
+													</button>
+													<div class="build-stage-group-stages" @if ($group['state'] === 'complete') hidden @endif>
+														@foreach ($group['stages'] as $stage)
+															<div class="build-stage build-stage-{{ $stage['state'] }}" data-build-stage-id="{{ $stage['id'] }}">
+																<span class="build-stage-dot"></span>
+																<span>{{ $stage['name'] }}</span>
+															</div>
+														@endforeach
+													</div>
 												</div>
 											@endforeach
 										</div>

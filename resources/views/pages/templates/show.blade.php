@@ -71,16 +71,16 @@
 										<td>{{ $target->name }}</td>
 										<td>{{ $target->pivot->template_vmid ?? 'Allocated on build' }}</td>
 										<td>
-											{{ $version ? 'v' . ltrim($version, 'v') : '—' }}
+											{{ $version ?: '—' }}
 											@if ($updateVersion)
-												<span class="badge bg-warning-lt ms-1" title="Update available: v{{ $updateVersion }}">
-													<i class="fa-solid fa-arrow-up me-1"></i>v{{ $updateVersion }} available
+												<span class="badge bg-warning-lt ms-1" title="Update available: {{ $updateVersion }}">
+													<i class="fa-solid fa-arrow-up me-1"></i>{{ $updateVersion }} available
 												</span>
 											@endif
 										</td>
 										<td><span class="badge bg-{{ $isBuilding ? 'blue' : ($target->pivot->availability_status === 'available' ? 'green' : 'secondary') }}-lt">{{ $isBuilding ? 'Building' : ucfirst($target->pivot->availability_status) }}</span></td>
 										<td>{{ $target->pivot->last_built_at?->diffForHumans() ?? 'Never' }}</td>
-										<td class="text-end">@if ($isBuilding)<button class="btn btn-sm" disabled><x-action-content icon="fa-solid fa-spinner" label="Building" /></button>@elseif ($catalogEntry?->isBuildEnabled() && $target->pivot->build_iso_file && $target->build_iso_storage && $target->build_vm_storage)<form action="{{ route('templates.build', [$template, $target]) }}" method="POST">@csrf<button class="btn btn-sm"><x-action-content icon="fa-solid fa-hammer" label="{{ $target->pivot->template_vmid ? 'Rebuild' : 'Build now' }}" /></button></form>@endif</td>
+										<td class="text-end">@if ($isBuilding)<button class="btn btn-sm" disabled><x-action-content icon="fa-solid fa-spinner" label="Building" /></button>@elseif ($catalogEntry?->isBuildable() && $target->pivot->build_iso_file && $target->build_iso_storage && $target->build_vm_storage)<form action="{{ route('templates.build', [$template, $target]) }}" method="POST">@csrf<button class="btn btn-sm"><x-action-content icon="fa-solid fa-hammer" label="{{ $target->pivot->template_vmid ? 'Rebuild' : 'Build now' }}" /></button></form>@endif</td>
 									</tr>
 								@empty
 									<tr><td colspan="6" class="text-secondary">No Proxmox nodes selected.</td></tr>
@@ -117,22 +117,37 @@
 					@endif
 				</div>
 
-				<div class="card mt-3">
-					<div class="card-header"><h3 class="card-title">Superseded templates</h3></div>
-					@if ($retiredVmids->isEmpty())
-						<div class="card-body text-secondary">Nothing is waiting to be pruned.</div>
-					@else
+				@if ($retiredVmids->isNotEmpty())
+					<div class="card mt-3">
+						<div class="card-header">
+							<h3 class="card-title">Superseded templates</h3>
+							<div class="card-actions">
+								<form action="{{ route('templates.superseded.purge-all', $template) }}" method="POST" onsubmit="return confirm('Destroy every superseded template VM that nothing is cloned from?');">
+									@csrf
+									<button class="btn btn-sm"><x-action-content icon="fa-solid fa-broom" label="Purge all" /></button>
+								</form>
+							</div>
+						</div>
 						<div class="table-responsive">
 							<table class="table card-table table-vcenter">
-								<thead><tr><th>Node</th><th>VMID</th><th>Generation</th><th>Retired</th><th>Runners still using it</th></tr></thead>
+								<thead><tr><th>Node</th><th>VMID</th><th>Generation</th><th>Retired</th><th>Runners still using it</th><th></th></tr></thead>
 								<tbody>
 									@foreach ($retiredVmids as $retired)
+										@php($inUse = ($retiredUsage[$retired->id] ?? 0) > 0)
 										<tr>
 											<td>{{ $retired->proxmoxTarget->name }}</td>
 											<td>{{ $retired->vmid }}</td>
 											<td>{{ $retired->generation }}</td>
 											<td>{{ $retired->retired_at->diffForHumans() }}</td>
 											<td>{{ $retiredUsage[$retired->id] ?? 0 }}</td>
+											<td class="text-end">
+												@unless ($inUse)
+													<form action="{{ route('templates.superseded.purge', [$template, $retired]) }}" method="POST" onsubmit="return confirm('Destroy template VMID {{ $retired->vmid }}?');">
+														@csrf
+														<button class="btn btn-sm"><x-action-content icon="fa-solid fa-trash" label="Purge now" /></button>
+													</form>
+												@endunless
+											</td>
 										</tr>
 									@endforeach
 								</tbody>
@@ -142,14 +157,12 @@
 							These are removed automatically once nothing is cloned from them, subject to the retention
 							setting on the <a href="{{ route('settings.templates.index') }}">settings page</a>.
 						</div>
-					@endif
-				</div>
+					</div>
+				@endif
 
-				<div class="card mt-3">
-					<div class="card-header"><h3 class="card-title">Build history</h3></div>
-					@if ($template->imageBuilds->isEmpty())
-						<div class="card-body text-secondary">This template has not been built from here.</div>
-					@else
+				@if ($template->imageBuilds->isNotEmpty())
+					<div class="card mt-3">
+						<div class="card-header"><h3 class="card-title">Build history</h3></div>
 						<div class="table-responsive">
 							<table class="table card-table table-vcenter">
 								<thead>
@@ -158,7 +171,12 @@
 								<tbody>
 									@foreach ($template->imageBuilds as $build)
 										<tr>
-											<td><a href="{{ route('builds.show', $build) }}">{{ $catalogEntry?->name() ?? $build->template_catalog_id }}</a></td>
+											<td>
+												<a href="{{ route('builds.show', $build) }}">{{ $catalogEntry?->name() ?? $build->template_catalog_id }}</a>
+												@if ($build->version)
+													<span class="text-secondary small">({{ $build->version }})</span>
+												@endif
+											</td>
 											<td>{{ $build->proxmoxTarget?->name ?? '—' }}</td>
 											<td><span class="badge bg-{{ $build->status->colour() }}-lt">{{ $build->status->label() }}</span></td>
 											<td class="text-secondary">{{ $build->started_at?->diffForHumans() ?? '—' }}</td>
@@ -168,8 +186,8 @@
 								</tbody>
 							</table>
 						</div>
-					@endif
-				</div>
+					</div>
+				@endif
 			</div>
 		</div>
 	</div>

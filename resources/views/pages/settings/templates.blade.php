@@ -84,7 +84,7 @@
 						@forelse ($installedVersions as $bundle)
 							<tr>
 								<td>
-									v{{ $bundle['version'] }}
+									{{ $bundle['version'] }}
 									@if ($bundle['bundled'])
 										<span class="badge bg-blue-lt ms-1">Pre-packaged</span>
 									@endif

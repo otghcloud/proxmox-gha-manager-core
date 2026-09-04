@@ -32,6 +32,11 @@ class Runner extends Model
         ];
     }
 
+    public function getBreadcrumbLabel(): string
+    {
+        return (string) ($this->runner_name ?: $this->getKey());
+    }
+
     public function environment(): BelongsTo
     {
         return $this->belongsTo(Environment::class);

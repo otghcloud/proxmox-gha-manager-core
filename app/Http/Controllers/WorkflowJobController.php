@@ -29,20 +29,25 @@ class WorkflowJobController extends Controller
 
     public function log(WorkflowJob $job): Response|StreamedResponse|BinaryFileResponse
     {
-        if (! $job->hasLog()) {
+        $headers = [
+            'Content-Type' => 'text/plain; charset=UTF-8',
+            'Content-Disposition' => 'inline; filename="job-'.$job->github_job_id.'.log"',
+        ];
+
+        $realPath = $job->hasLog() ? realpath($job->log_path) : false;
+
+        if ($realPath !== false && is_readable($realPath)) {
+            return response()->file($realPath, $headers);
+        }
+
+        // The file may have been pruned; the stored copy is the durable source.
+        $stored = $job->storedLog();
+
+        if ($stored === null) {
             abort(404, 'Job log file is missing or not readable.');
         }
 
-        $realPath = realpath($job->log_path);
-
-        if ($realPath === false || ! is_readable($realPath)) {
-            abort(404, 'Job log file is not readable.');
-        }
-
-        return response()->file($realPath, [
-            'Content-Type' => 'text/plain; charset=UTF-8',
-            'Content-Disposition' => 'inline; filename="job-'.$job->github_job_id.'.log"',
-        ]);
+        return response($stored->body, 200, $headers);
     }
 
     public function destroy(WorkflowJob $job): RedirectResponse

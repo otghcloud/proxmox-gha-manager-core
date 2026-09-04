@@ -38,6 +38,56 @@ function updateProgress(progress) {
         node.classList.remove('build-stage-pending', 'build-stage-current', 'build-stage-complete');
         node.classList.add(`build-stage-${stage.state}`);
     });
+
+    progress.groups?.forEach((group) => {
+        const node = container.querySelector(`[data-build-stage-group="${CSS.escape(group.id)}"]`);
+
+        if (!node) {
+            return;
+        }
+
+        node.classList.remove('build-stage-group-pending', 'build-stage-group-current', 'build-stage-group-complete');
+        node.classList.add(`build-stage-group-${group.state}`);
+
+        const count = node.querySelector('.build-stage-group-count');
+
+        if (count) {
+            count.textContent = `${group.completed_count} / ${group.stage_count}`;
+        }
+
+        // Only auto-collapse groups the user has not touched, so a manual expand is not undone.
+        const toggle = node.querySelector('[data-build-stage-toggle]');
+        const stages = node.querySelector('.build-stage-group-stages');
+
+        if (!toggle || !stages || toggle.dataset.userToggled === 'true') {
+            return;
+        }
+
+        const expanded = group.state !== 'complete';
+        toggle.setAttribute('aria-expanded', expanded ? 'true' : 'false');
+        stages.hidden = !expanded;
+    });
+}
+
+function initStageGroupToggles() {
+    document.addEventListener('click', (event) => {
+        const toggle = event.target.closest('[data-build-stage-toggle]');
+
+        if (!toggle) {
+            return;
+        }
+
+        const stages = toggle.parentElement?.querySelector('.build-stage-group-stages');
+
+        if (!stages) {
+            return;
+        }
+
+        const expanded = toggle.getAttribute('aria-expanded') === 'true';
+        toggle.setAttribute('aria-expanded', expanded ? 'false' : 'true');
+        toggle.dataset.userToggled = 'true';
+        stages.hidden = expanded;
+    });
 }
 
 function initStaticLogViewers() {
@@ -58,6 +108,7 @@ function initStaticLogViewers() {
 
 export default function initBuildLog() {
     initStaticLogViewers();
+    initStageGroupToggles();
 
     const viewer = document.getElementById('build-log');
 

@@ -67,12 +67,15 @@ Route::middleware('auth')->group(function (): void {
         Route::resource('templates', RunnerTemplateController::class)->parameters(['templates' => 'runnerTemplate']);
         Route::post('/templates/{runnerTemplate}/build/{target}', [RunnerTemplateController::class, 'build'])->name('templates.build');
         Route::post('/templates/{runnerTemplate}/rebuild', [RunnerTemplateController::class, 'build'])->name('templates.rebuild');
+        Route::post('/templates/{runnerTemplate}/superseded/purge-all', [RunnerTemplateController::class, 'purgeAllSuperseded'])->name('templates.superseded.purge-all');
+        Route::post('/templates/{runnerTemplate}/superseded/{retired}/purge', [RunnerTemplateController::class, 'purgeSuperseded'])->name('templates.superseded.purge');
 
         Route::resource('pools', PoolController::class);
 
         Route::get('/builds', [BuildController::class, 'index'])->name('builds.index');
         Route::get('/builds/{imageBuild}', [BuildController::class, 'show'])->name('builds.show');
         Route::get('/builds/{imageBuild}/log', [BuildController::class, 'log'])->name('builds.log');
+        Route::post('/builds/{imageBuild}/cancel', [BuildController::class, 'cancel'])->name('builds.cancel');
         Route::delete('/builds/{imageBuild}', [BuildController::class, 'destroy'])->name('builds.destroy');
     });
 

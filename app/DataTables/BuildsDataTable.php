@@ -19,7 +19,12 @@ class BuildsDataTable extends DataTable
     public function dataTable(QueryBuilder $query): EloquentDataTable
     {
         return (new EloquentDataTable($query))
-            ->addColumn('template_target', fn (ImageBuild $build): string => '<a href="'.route('builds.show', $build).'">'.e(app(TemplateCatalog::class)->entryForId($build->template_catalog_id)?->name() ?? $build->template_catalog_id).'</a>')
+            ->addColumn('template_target', function (ImageBuild $build): string {
+                $name = app(TemplateCatalog::class)->entryForId($build->template_catalog_id)?->name() ?? $build->template_catalog_id;
+                $version = $build->version ? ' <span class="text-secondary small">('.e($build->version).')</span>' : '';
+
+                return '<a href="'.route('builds.show', $build).'">'.e($name).'</a>'.$version;
+            })
             ->addColumn('environment', fn (ImageBuild $build): string => e($build->environment->name))
             ->addColumn('template', fn (ImageBuild $build): string => e($build->runnerTemplate?->name ?? '—'))
             ->addColumn('node', fn (ImageBuild $build): string => e($build->proxmoxTarget?->name ?? '—'))
@@ -36,6 +41,15 @@ class BuildsDataTable extends DataTable
                     $actions[] = ['type' => 'delete', 'href' => route('builds.destroy', $build), 'attributes' => [
                         'data-delete-message' => 'This removes the build record and its stored log file.',
                     ]];
+                } else {
+                    $actions[] = [
+                        'type' => 'custom',
+                        'label' => 'Force kill',
+                        'icon' => 'fa-solid fa-skull fa-fw',
+                        'class' => 'text-danger',
+                        'href' => route('builds.cancel', $build),
+                        'attributes' => ['data-action' => 'post'],
+                    ];
                 }
 
                 return DataTableHelpers::actionsDropdown($actions);

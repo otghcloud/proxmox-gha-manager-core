@@ -6,6 +6,7 @@ use App\Enums\JobConclusion;
 use Illuminate\Database\Eloquent\Builder;
 use Illuminate\Database\Eloquent\Model;
 use Illuminate\Database\Eloquent\Relations\BelongsTo;
+use Illuminate\Database\Eloquent\Relations\MorphMany;
 
 /**
  * A GitHub Actions job this installation served, built from the workflow_job webhook payloads.
@@ -79,5 +80,20 @@ class WorkflowJob extends Model
     public function hasLog(): bool
     {
         return $this->log_path !== null && is_readable($this->log_path);
+    }
+
+    public function getBreadcrumbLabel(): string
+    {
+        return (string) ($this->job_name ?: $this->github_job_id);
+    }
+
+    public function logEntries(): MorphMany
+    {
+        return $this->morphMany(LogEntry::class, 'loggable');
+    }
+
+    public function storedLog(): ?LogEntry
+    {
+        return $this->logEntries()->where('channel', LogEntry::CHANNEL_JOB)->first();
     }
 }

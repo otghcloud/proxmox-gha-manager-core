@@ -3,6 +3,7 @@
 namespace App\Models;
 
 use App\Enums\RunnerState;
+use App\Models\Concerns\HasBreadcrumbLabel;
 use Illuminate\Database\Eloquent\Builder;
 use Illuminate\Database\Eloquent\Factories\HasFactory;
 use Illuminate\Database\Eloquent\Model;
@@ -12,6 +13,7 @@ use Illuminate\Database\Eloquent\Relations\HasMany;
 
 class Pool extends Model
 {
+    use HasBreadcrumbLabel;
     use HasFactory;
 
     protected $guarded = ['id'];
@@ -57,9 +59,12 @@ class Pool extends Model
         return $query->where('enabled', true);
     }
 
+    /**
+     * Baked into the template image, so it is always the OS default.
+     */
     public function runnerDirectory(): string
     {
-        return $this->runner_dir ?: $this->runnerTemplate->os->defaultRunnerDir();
+        return $this->runnerTemplate->os->defaultRunnerDir();
     }
 
     public function activeRunnerCount(): int

@@ -35,7 +35,6 @@ class PoolRequest extends FormRequest
             'cores' => ['required', 'integer', 'min:1', 'max:512'],
             'memory' => ['required', 'integer', 'min:512'],
             'boot_timeout_seconds' => ['required', 'integer', 'min:30'],
-            'runner_dir' => ['nullable', 'string', 'max:255'],
             'nodes' => ['array'],
             'nodes.*.enabled' => ['boolean'],
             'nodes.*.preference' => ['exclude_unless:nodes.*.enabled,true', 'required', 'integer', 'min:0'],

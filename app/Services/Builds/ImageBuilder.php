@@ -5,6 +5,7 @@ namespace App\Services\Builds;
 use App\Enums\BuildStatus;
 use App\Exceptions\ProvisioningException;
 use App\Models\ImageBuild;
+use App\Models\LogEntry;
 use App\Models\RunnerTemplate;
 use App\Services\Builds\Packer\RunnerImagesLocator;
 use App\Services\Builds\Packer\TemplateCatalog;
@@ -45,6 +46,10 @@ class ImageBuilder
             throw new ProvisioningException('The build has no template attached.');
         }
 
+        if ($entry->builderType() !== 'packer') {
+            throw new ProvisioningException('The '.$entry->builderType().' builder is not implemented yet.');
+        }
+
         $logPath = $this->logPath($build);
         $templateDirectory = $this->catalog->templateDirectory($entry);
 
@@ -68,19 +73,29 @@ class ImageBuilder
             (string) $account->linux_ssh_password,
         );
 
-        $process = $this->runPacker($templateDirectory, $this->buildEnvironment($build, $entry), $logPath);
+        $process = $this->runPacker($build, $templateDirectory, $this->buildEnvironment($build, $entry), $logPath);
+
+        $this->storeLog($build, $logPath);
+
+        // A force kill already finalised the record; the non-zero exit is the kill, not a build failure.
+        if ($build->fresh()?->status === BuildStatus::Cancelled) {
+            $this->rebuilder->advanceBatch($build->refresh());
+
+            return;
+        }
 
         DB::transaction(function () use ($build, $process, $template, $entry) {
             $build->forceFill([
                 'status' => $process->isSuccessful() ? BuildStatus::Succeeded : BuildStatus::Failed,
                 'exit_code' => $process->getExitCode(),
+                'process_pid' => null,
                 'finished_at' => now(),
             ])->save();
 
             if (! $process->isSuccessful()) {
                 Log::error('Image build failed', [
                     'build' => $build->id,
-                    'target' => $entry->target(),
+                    'template_catalog_id' => $entry->id(),
                     'exit_code' => $process->getExitCode(),
                 ]);
 
@@ -93,13 +108,29 @@ class ImageBuilder
                 Log::error('Image build succeeded but the template record could not be updated', [
                     'build' => $build->id,
                     'template' => $template->id,
-                    'target' => $entry->target(),
+                    'template_catalog_id' => $entry->id(),
                     'error' => $e->getMessage(),
                 ]);
             }
         });
 
         $this->rebuilder->advanceBatch($build->refresh());
+    }
+
+    /**
+     * Keeps a durable copy of the log once the build ends, so pruning the file loses nothing.
+     */
+    private function storeLog(ImageBuild $build, string $logPath): void
+    {
+        if (! is_readable($logPath)) {
+            return;
+        }
+
+        try {
+            LogEntry::store($build, LogEntry::CHANNEL_BUILD, (string) file_get_contents($logPath));
+        } catch (\Throwable $e) {
+            Log::warning('Could not store the build log', ['build' => $build->id, 'error' => $e->getMessage()]);
+        }
     }
 
     /**
@@ -124,7 +155,7 @@ class ImageBuilder
      *
      * @param  array<string, string>  $environment
      */
-    private function runPacker(string $templateDirectory, array $environment, string $logPath): Process
+    private function runPacker(ImageBuild $build, string $templateDirectory, array $environment, string $logPath): Process
     {
         $packer = (string) config('builds.packer_binary');
         $handle = fopen($logPath, 'w');
@@ -147,9 +178,14 @@ class ImageBuilder
                     self::TIMEOUT_SECONDS,
                 );
 
-                $process->run(function (string $type, string $chunk) use ($handle): void {
+                // Started rather than run() so the PID is recorded and the build can be force killed.
+                $process->start(function (string $type, string $chunk) use ($handle): void {
                     fwrite($handle, $chunk);
                 });
+
+                $build->forceFill(['process_pid' => $process->getPid()])->save();
+
+                $process->wait();
 
                 if (! $process->isSuccessful()) {
                     break;

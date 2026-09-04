@@ -22,8 +22,10 @@
 				<select class="form-select" data-template-select id="template_catalog_id" name="template_catalog_id" required>
 					<option value="">Select a target template</option>
 					@foreach ($catalogTemplates as $catalogTemplate)
-						<option value="{{ $catalogTemplate['id'] }}" @selected($selectedCatalogId === $catalogTemplate['id']) @disabled(! ($catalogTemplate['build_capability']['enabled'] ?? false))>
-							{{ $catalogTemplate['name'] }}{{ ($catalogTemplate['build_capability']['enabled'] ?? false) ? '' : ' ('.($catalogTemplate['build_capability']['disabled_reason'] ?? 'not supported').')' }}
+						@php($builder = $catalogTemplate['builders']['packer'] ?? reset($catalogTemplate['builders']))
+						@php($isBuildable = (bool) ($builder['buildable'] ?? false))
+						<option value="{{ $catalogTemplate['id'] }}" @selected($selectedCatalogId === $catalogTemplate['id']) @disabled(! $isBuildable)>
+							{{ $catalogTemplate['name'] }}{{ $isBuildable ? '' : ' ('.($builder['disabled_reason'] ?: 'not supported').')' }}
 						</option>
 					@endforeach
 				</select>

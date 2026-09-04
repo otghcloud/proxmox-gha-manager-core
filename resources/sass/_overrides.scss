@@ -46,8 +46,52 @@ body {
 
 .build-stage-list {
     display: grid;
+    gap: 0.75rem;
+}
+
+.build-stage-group-header {
+    align-items: center;
+    background: none;
+    border: 0;
+    color: var(--tblr-secondary);
+    display: flex;
+    font-size: 0.75rem;
+    font-weight: 600;
+    gap: 0.5rem;
+    letter-spacing: 0.04em;
+    padding: 0.25rem 0;
+    text-transform: uppercase;
+    width: 100%;
+}
+
+.build-stage-group-caret {
+    font-size: 0.625rem;
+    transition: transform 0.15s ease-in-out;
+}
+
+.build-stage-group-header[aria-expanded='false'] .build-stage-group-caret {
+    transform: rotate(-90deg);
+}
+
+.build-stage-group-count {
+    margin-left: auto;
+    font-weight: 400;
+    letter-spacing: 0;
+    text-transform: none;
+}
+
+.build-stage-group-stages {
+    display: grid;
     gap: 0.5rem;
     grid-template-columns: repeat(2, minmax(0, 1fr));
+}
+
+.build-stage-group-current .build-stage-group-header {
+    color: var(--tblr-primary);
+}
+
+.build-stage-group-complete .build-stage-group-header {
+    color: var(--tblr-success);
 }
 
 .build-stage {
@@ -97,7 +141,7 @@ body {
         border-top: 1px solid var(--tblr-border-color);
     }
 
-    .build-stage-list {
+    .build-stage-group-stages {
         grid-template-columns: 1fr;
     }
 
