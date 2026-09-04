@@ -25,7 +25,7 @@ class SshRunnerLauncher
         $ssh = new SshConnection(
             host: $host,
             port: $pool->runnerTemplate->os->remotePort(),
-            username: $credential->username(),
+            username: $credential->resolvedUsername(),
             password: $credential->password,
             privateKey: $credential->private_key,
         );
@@ -36,7 +36,7 @@ class SshRunnerLauncher
         $ssh->putString($jitPath, $encodedJitConfig)->chmod(0600, $jitPath);
 
         // Temporary until the templates ship with the SSH user already in the docker group.
-        $ssh->run('sudo -n usermod -aG docker '.escapeshellarg($credential->username()));
+        $ssh->run('sudo -n usermod -aG docker '.escapeshellarg($credential->resolvedUsername()));
 
         $ssh->run('sudo -n hostnamectl set-hostname '.escapeshellarg($runnerName));
 

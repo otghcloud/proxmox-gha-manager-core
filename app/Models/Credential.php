@@ -44,7 +44,7 @@ class Credential extends Model
         return filled($this->password) || (filled($this->private_key) && filled($this->public_key));
     }
 
-    public function username(?string $fallback = null): string
+    public function resolvedUsername(?string $fallback = null): string
     {
         return (string) ($this->username ?: $fallback ?: 'runner');
     }
