@@ -116,7 +116,14 @@ class ProxmoxClient
             return rtrim($path, '/');
         }
 
-        if (in_array($config['type'] ?? null, ['cifs', 'nfs', 'glusterfs', 'cephfs'], true)) {
+        $type = strtolower((string) ($config['type'] ?? ''));
+
+        if ($type === '') {
+            $storageConfig = collect($this->storages())->firstWhere('storage', $storage);
+            $type = strtolower((string) (is_array($storageConfig) ? ($storageConfig['type'] ?? '') : ''));
+        }
+
+        if (in_array($type, ['cifs', 'nfs', 'glusterfs', 'cephfs'], true)) {
             return '/mnt/pve/'.trim($storage, '/');
         }
 
