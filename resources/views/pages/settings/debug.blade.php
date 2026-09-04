@@ -92,7 +92,7 @@
 					<div class="me-3">
 						<strong>Clear runner history</strong>
 						<div class="text-secondary small">
-							Deletes {{ $historicRunnerCount }} destroyed and failed runner record(s) with their events.
+														{{ $runnerHistoryCount }} runner history record(s); {{ $historicRunnerCount }} destroyed and failed record(s) can be cleared.
 						</div>
 					</div>
 					<form action="{{ route('settings.debug.runner-history') }}" method="POST" onsubmit="return confirm('Delete all historic runner records?');">

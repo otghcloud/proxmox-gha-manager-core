@@ -69,6 +69,35 @@ class Reaper
     }
 
     /**
+     * Count VMs this reaper is expected to destroy before the destructive pass.
+     *
+     * The normal pass uses GitHub registration state and lifecycle rules, so
+     * the preflight performs the same reconciliation and eligibility checks.
+     */
+    public function pendingCount(bool $all = false): int
+    {
+        if ($all) {
+            return $this->trackedRunners()->count();
+        }
+
+        $this->reconcile();
+        $runners = $this->github->listRunners();
+        $pending = 0;
+
+        foreach ($this->trackedRunners()->get() as $runner) {
+            if ($runner->refresh()->state === RunnerState::Destroyed) {
+                continue;
+            }
+
+            if ($this->destructionReason($runner, $runners[$runner->runner_name] ?? null) !== null) {
+                $pending++;
+            }
+        }
+
+        return $pending;
+    }
+
+    /**
      * Destroy every tracked runner on this target, whatever state it is in.
      *
      * @return int the number of VMs destroyed
