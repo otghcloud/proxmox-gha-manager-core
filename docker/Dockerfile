@@ -18,6 +18,9 @@ FROM composer:2 AS vendor
 
 WORKDIR /build
 COPY composer.json composer.lock ./
+COPY packages/gha-plugin-packer/composer.json packages/gha-plugin-packer/composer.json
+COPY packages/gha-plugin-cloudimg/composer.json packages/gha-plugin-cloudimg/composer.json
+COPY packages/gha-plugin-prebuilt/composer.json packages/gha-plugin-prebuilt/composer.json
 RUN composer install --no-dev --no-scripts --no-autoloader --prefer-dist --no-interaction
 COPY . ./
 RUN rm -rf bootstrap/cache/*.php .env public/build public/hot database/database.sqlite \
